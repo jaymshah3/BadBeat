@@ -7,7 +7,7 @@ class Deck():
         self.cards = []
         self.index = 0
         for s in ['C', 'D', 'H', 'S']:
-            for i in range(1, 14):
+            for i in range(2, 15):
                 self.cards.append(Card(i, s))
 
     def __str__(self):
