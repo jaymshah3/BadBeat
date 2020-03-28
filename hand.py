@@ -15,10 +15,14 @@ class Hand():
         major_group = -1
         value_map = {}
         suit_map = {'s': 0,'h' :0,'c':0,'d':0}
-        return find_major_group()
+        return find_major_group(cards, value_map, suit_map, max_card)
 
-    def __init__(self, num):
+    def __init__(self, num, cards, value_map, suit_map, max_card):
         self.major_group = num
+        self.cards = cards
+        self.value_map = value_map
+        self.suit_map = suit_map
+        self.max_card = max_card
 
     @staticmethod
     def find_is_flush(suit_map):
@@ -43,7 +47,7 @@ class Hand():
         return True
 
     @staticmethod
-    def find_major_group(cards, value_map, suit_map):
+    def find_major_group(cards, value_map, suit_map, max_card):
         #populating our two maps
         for card in cards:
             if card.value in value_map:
@@ -51,8 +55,8 @@ class Hand():
             else:
                 value_map[card.value] = 1
             suit_map[card.suit]+=1
-        is_flush = find_is_flush()
-        is_straight = find_is_straight() 
+        is_flush = find_is_flush(suit_map)
+        is_straight = find_is_straight(cards, max_card) 
         if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
             print('royal flush')
             return RoyalFlush(10)
