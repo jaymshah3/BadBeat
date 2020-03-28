@@ -15,7 +15,7 @@ class Hand():
         major_group = -1
         value_map = {}
         suit_map = {'s': 0,'h' :0,'c':0,'d':0}
-        return find_major_group(cards, value_map, suit_map, max_card)
+        return Hand.find_major_group(cards, value_map, suit_map, max_card)
 
     def __init__(self, num, cards, value_map, suit_map, max_card, is_straight, is_flush):
         self.major_group = num
@@ -31,21 +31,16 @@ class Hand():
         for keys in suit_map:
             if suit_map[keys] == 5:
                 return True
-
+        return False
     @staticmethod
     def find_is_straight(cards, max_card):
-        if max_card.value == 1: # if there is an ace, checking a straight's a bit different
-            if cards[1].value == 10 and cards[2].value == 11 and cards[3].value == 12 and cards[4].value == 13:
+        if max_card.value == 14: # if there is an ace, checking a straight's a bit different
+            if cards[0].value == 2 and cards[1].value == 3 and cards[2].value == 4 and cards[3].value == 5:
                 return True
-            else:
-                for i in range(2,len(cards)-1):
-                    if cards[i+1].value - cards[i].value != 1:
-                        is_straight = False
-                        return
-        else:    #normal way to check a straight with no ace 
-            for i in range(len(cards)-1):
-                if cards[i+1].value - cards[i].value != 1:
-                    return False
+        #normal way to check a straight with no ace 
+        for i in range(len(cards)-1):
+            if cards[i+1].value - cards[i].value != 1:
+                return False
         return True
 
     @staticmethod
@@ -57,8 +52,8 @@ class Hand():
             else:
                 value_map[card.value] = 1
             suit_map[card.suit]+=1
-        is_flush = find_is_flush(suit_map)
-        is_straight = find_is_straight(cards, max_card) 
+        is_flush = Hand.find_is_flush(suit_map)
+        is_straight = Hand.find_is_straight(cards, max_card) 
         if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
             print('royal flush')
             return RoyalFlush(10, cards, value_map, suit_map, max_card, is_straight, is_flush)
@@ -102,16 +97,19 @@ class Hand():
 class RoyalFlush(Hand):
     def compare(self, other):
         print("custom")
-        return True
+        return False
 
 class StraightFlush(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        return self.max_card < other.max_card
 
 class FourOfAKind(Hand):
     def compare(self, other):
         print("custom")
+        fourOfKindA = [k for k,v in self.value_map.items() if v==4]
+        fourOfKindB = [k for k,v in other.value_map.items() if v==4]
+        print(fourOfKindA)
+        print(fourOfKindB)
         return True
 
 class FullHouse(Hand):
