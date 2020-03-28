@@ -59,34 +59,34 @@ class Hand():
         is_straight = find_is_straight(cards, max_card) 
         if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
             print('royal flush')
-            return RoyalFlush(10)
+            return RoyalFlush(10, cards, value_map, suit_map, max_card)
         elif is_flush and is_straight:
             print('straight flush')
-            return StraightFlush(9)
+            return StraightFlush(9, cards, value_map, suit_map, max_card)
         elif 4 in value_map.values():
             print('four of a kind')
-            return FourOfAKind(8)
+            return FourOfAKind(8, cards, value_map, suit_map, max_card)
         elif 3 in value_map.values() and 2 in value_map.values():
             print('full house')
-            return FullHouse(7)
+            return FullHouse(7, cards, value_map, suit_map, max_card)
         elif is_flush:
             print('flush')
-            return Flush(6)
+            return Flush(6, cards, value_map, suit_map, max_card)
         elif is_straight:
             print('straight')
-            return Straight(5)
+            return Straight(5, cards, value_map, suit_map, max_card)
         elif 3 in value_map.values():
             print('three of a kind')
-            return ThreeOfAKind(4)
+            return ThreeOfAKind(4, cards, value_map, suit_map, max_card)
         elif len({k:v for k,v in value_map.items() if v==2}) is 2:
             print('two pair')
-            return TwoPair(3)
+            return TwoPair(3, cards, value_map, suit_map, max_card)
         elif 2 in value_map.values():
             print('one pair')
-            return Pair(2)
+            return Pair(2, cards, value_map, suit_map, max_card)
         else:
             print('high card')
-            return HighCard(1)
+            return HighCard(1, cards, value_map, suit_map, max_card)
 
     def __lt__(self, other):
         if type(self) != type(other):
