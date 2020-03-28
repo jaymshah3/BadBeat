@@ -1,84 +1,144 @@
 import card
 class Hand():
 
-    def __init__(self, cards):
-        self.cards = sorted(cards)
-        for b in self.cards:
+    @staticmethod
+    def create_hand(cards):
+        cards = sorted(cards, key= lambda card:card.value)
+        for b in cards:
             print(b.value)
-        self.max_card = self.cards[4]
-        self.is_straight = False
-        self.is_flush = False
-        self.major_group = -1
-        self.value_map = {}
-        self.suit_map = {'s': 0,'h' :0,'c':0,'d':0}
-        self.find_major_group()
-        #for k,v in self.value_map.items():
-         #   print(k)
-          #  print(v)
-        #for k,v in self.suit_map.items():
-         #   print(k)
-          #  print(v)
+        if cards[0].value == 1:
+            max_card = cards[0]
+        else:
+            max_card = cards[4]
+        is_straight = False
+        is_flush = False
+        major_group = -1
+        value_map = {}
+        suit_map = {'s': 0,'h' :0,'c':0,'d':0}
+        return find_major_group()
 
+    def __init__(self, num):
+        self.major_group = num
 
-    def find_is_flush(self):
-        for keys in self.suit_map:
-            if self.suit_map[keys] == 5:
-                self.is_flush = True
+    @staticmethod
+    def find_is_flush(suit_map):
+        for keys in suit_map:
+            if suit_map[keys] == 5:
+                return True
 
-    def find_is_straight(self):
-        if self.max_card.value == 14: # if there is an ace, checking a straight's a bit different with ace as low
-            if self.cards[0].value == 2 and self.cards[1].value == 3 and self.cards[2].value == 4 and self.cards[3].value == 5:
-                self.is_straight = True
-                return
-        #normal way to check a straight with ace as high card
-        for i in range(len(self.cards)-1):
-            if self.cards[i+1].value - self.cards[i].value != 1:
-                self.is_straight = False
-                return
-        self.is_straight = True
-
-    def find_major_group(self):
-        #populating our two maps
-        for card in self.cards:
-            if card.value in self.value_map:
-                 self.value_map[card.value]+=1
+    @staticmethod
+    def find_is_straight(cards, max_card):
+        if max_card.value == 1: # if there is an ace, checking a straight's a bit different
+            if cards[1].value == 10 and cards[2].value == 11 and cards[3].value == 12 and cards[4].value == 13:
+                return True
             else:
-                self.value_map[card.value] = 1
-            self.suit_map[card.suit]+=1
-        self.find_is_flush()
-        self.find_is_straight() 
-        if self.is_flush and self.is_straight and self.max_card.value == 1 and self.cards[4].value == 13:
+                for i in range(2,len(cards)-1):
+                    if cards[i+1].value - cards[i].value != 1:
+                        is_straight = False
+                        return
+        else:    #normal way to check a straight with no ace 
+            for i in range(len(cards)-1):
+                if cards[i+1].value - cards[i].value != 1:
+                    return False
+        return True
+
+    @staticmethod
+    def find_major_group(cards, value_map, suit_map):
+        #populating our two maps
+        for card in cards:
+            if card.value in value_map:
+                 value_map[card.value]+=1
+            else:
+                value_map[card.value] = 1
+            suit_map[card.suit]+=1
+        is_flush = find_is_flush()
+        is_straight = find_is_straight() 
+        if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
             print('royal flush')
-            self.major_group = 10
-        elif self.is_flush and self.is_straight:
+            return RoyalFlush(10)
+        elif is_flush and is_straight:
             print('straight flush')
-            self.major_group = 9
-        elif 4 in self.value_map.values():
+            return StraightFlush(9)
+        elif 4 in value_map.values():
             print('four of a kind')
-            self.major_group = 8
-        elif 3 in self.value_map.values() and 2 in self.value_map.values():
+            return FourOfAKind(8)
+        elif 3 in value_map.values() and 2 in value_map.values():
             print('full house')
-            self.major_group = 7
-        elif self.is_flush:
+            return FullHouse(7)
+        elif is_flush:
             print('flush')
-            self.major_group = 6
-        elif self.is_straight:
+            return Flush(6)
+        elif is_straight:
             print('straight')
-            self.major_group = 5
-        elif 3 in self.value_map.values():
+            return Straight(5)
+        elif 3 in value_map.values():
             print('three of a kind')
-            self.major_group=4
-        elif len({k:v for k,v in self.value_map.items() if v==2}) is 2:
+            return ThreeOfAKind(4)
+        elif len({k:v for k,v in value_map.items() if v==2}) is 2:
             print('two pair')
-            self.major_group = 3
-        elif 2 in self.value_map.values():
+            return TwoPair(3)
+        elif 2 in value_map.values():
             print('one pair')
-            self.major_group = 2
+            return Pair(2)
         else:
             print('high card')
-            self.major_group = 1
+            return HighCard(1)
 
-    def __lt__(self, hand):
-        return self.major_group < hand.major_group
+    def __lt__(self, other):
+        if type(self) != type(other):
+            print("here")
+            print(self.major_group)
+            print(other.major_group)
+            return self.major_group < other.major_group
+        else:
+            return self.compare(other)
 
+class RoyalFlush(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
 
+class StraightFlush(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class FourOfAKind(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class FullHouse(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class Flush(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class Straight(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class ThreeOfAKind(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class TwoPair(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class Pair(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
+
+class HighCard(Hand):
+    def compare(self, other):
+        print("custom")
+        return True
