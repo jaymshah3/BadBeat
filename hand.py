@@ -2,13 +2,10 @@ import card
 class Hand():
 
     def __init__(self, cards):
-        self.cards = sorted(cards, key= lambda card:card.value)
+        self.cards = sorted(cards)
         for b in self.cards:
             print(b.value)
-        if self.cards[0].value == 1:
-            self.max_card = self.cards[0]
-        else:
-            self.max_card = self.cards[4]
+        self.max_card = self.cards[4]
         self.is_straight = False
         self.is_flush = False
         self.major_group = -1
@@ -29,20 +26,15 @@ class Hand():
                 self.is_flush = True
 
     def find_is_straight(self):
-        if self.max_card.value == 1: # if there is an ace, checking a straight's a bit different
-            if self.cards[1].value == 10 and self.cards[2].value == 11 and self.cards[3].value == 12 and self.cards[4].value == 13:
+        if self.max_card.value == 14: # if there is an ace, checking a straight's a bit different with ace as low
+            if self.cards[0].value == 2 and self.cards[1].value == 3 and self.cards[2].value == 4 and self.cards[3].value == 5:
                 self.is_straight = True
                 return
-            else:
-                for i in range(2,len(self.cards)-1):
-                    if self.cards[i+1].value - self.cards[i].value != 1:
-                        self.is_straight = False
-                        return
-        else:    #normal way to check a straight with no ace 
-            for i in range(len(self.cards)-1):
-                if self.cards[i+1].value - self.cards[i].value != 1:
-                    self.is_straight = False
-                    return
+        #normal way to check a straight with ace as high card
+        for i in range(len(self.cards)-1):
+            if self.cards[i+1].value - self.cards[i].value != 1:
+                self.is_straight = False
+                return
         self.is_straight = True
 
     def find_major_group(self):
@@ -88,3 +80,5 @@ class Hand():
 
     def __lt__(self, hand):
         return self.major_group < hand.major_group
+
+
