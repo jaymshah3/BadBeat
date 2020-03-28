@@ -4,7 +4,7 @@ class Card():
         self.suit = suit
 
     def __lt__(self, card):
-        self.value < card.value
+        return self.value < card.value
 
     def __eq__(self, card):
         return not (self < card) and not (self > card)
