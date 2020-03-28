@@ -15,12 +15,12 @@ class Hand():
         self.value_map = {}
         self.suit_map = {'s': 0,'h' :0,'c':0,'d':0}
         self.find_major_group()
-        for k,v in self.value_map.items():
-            print(k)
-            print(v)
-        for k,v in self.suit_map.items():
-            print(k)
-            print(v)
+        #for k,v in self.value_map.items():
+         #   print(k)
+          #  print(v)
+        #for k,v in self.suit_map.items():
+         #   print(k)
+          #  print(v)
 
 
     def find_is_flush(self):
@@ -46,6 +46,7 @@ class Hand():
         self.is_straight = True
 
     def find_major_group(self):
+        #populating our two maps
         for card in self.cards:
             if card.value in self.value_map:
                  self.value_map[card.value]+=1
@@ -54,9 +55,36 @@ class Hand():
             self.suit_map[card.suit]+=1
         self.find_is_flush()
         self.find_is_straight() 
-        if self.is_flush and self.is_straight and self.max_card.value == 1:
+        if self.is_flush and self.is_straight and self.max_card.value == 1 and self.cards[4].value == 13:
             print('royal flush')
+            self.major_group = 10
         elif self.is_flush and self.is_straight:
             print('straight flush')
+            self.major_group = 9
+        elif 4 in self.value_map.values():
+            print('four of a kind')
+            self.major_group = 8
+        elif 3 in self.value_map.values() and 2 in self.value_map.values():
+            print('full house')
+            self.major_group = 7
+        elif self.is_flush:
+            print('flush')
+            self.major_group = 6
+        elif self.is_straight:
+            print('straight')
+            self.major_group = 5
+        elif 3 in self.value_map.values():
+            print('three of a kind')
+            self.major_group=4
+        elif len({k:v for k,v in self.value_map.items() if v==2}) is 2:
+            print('two pair')
+            self.major_group = 3
+        elif 2 in self.value_map.values():
+            print('one pair')
+            self.major_group = 2
+        else:
+            print('high card')
+            self.major_group = 1
 
-            
+    def __lt__(self, hand):
+        return self.major_group < hand.major_group
