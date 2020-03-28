@@ -8,3 +8,6 @@ class Card():
 
     def __eq__(self, card):
         return not (self < card) and not (self > card)
+
+    def __str__(self):
+        return str(self.value) + self.suit
