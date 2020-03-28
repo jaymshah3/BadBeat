@@ -110,7 +110,14 @@ class FourOfAKind(Hand):
         fourOfKindB = [k for k,v in other.value_map.items() if v==4]
         print(fourOfKindA)
         print(fourOfKindB)
-        return True
+        if fourOfKindA == fourOfKindB:
+            kickerA = [k for k,v in self.value_map.items() if v==1]
+            kickerB= [k for k,v in other.value_map.items() if v==1]
+            print(kickerA)
+            print(kickerB)
+            return kickerA < kickerB
+        else:
+            return fourOfKindA < fourOfKindB
 
 class FullHouse(Hand):
     def compare(self, other):
