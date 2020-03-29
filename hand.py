@@ -17,14 +17,8 @@ class Hand():
         suit_map = {'s': 0,'h' :0,'c':0,'d':0}
         return Hand.find_major_group(cards, value_map, suit_map, max_card)
 
-    def __init__(self, num, cards, value_map, suit_map, max_card, is_straight, is_flush):
+    def __init__(self, num):
         self.major_group = num
-        self.cards = cards
-        self.value_map = value_map
-        self.suit_map = suit_map
-        self.max_card = max_card
-        self.is_straight = is_straight
-        self.is_flush = is_flush
 
     @staticmethod
     def find_is_flush(suit_map):
@@ -32,6 +26,7 @@ class Hand():
             if suit_map[keys] == 5:
                 return True
         return False
+
     @staticmethod
     def find_is_straight(cards, max_card):
         if max_card.value == 14: # if there is an ace, checking a straight's a bit different
@@ -56,68 +51,85 @@ class Hand():
         is_straight = Hand.find_is_straight(cards, max_card) 
         if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
             print('royal flush')
-            return RoyalFlush(10, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = RoyalFlush(10)
         elif is_flush and is_straight:
             print('straight flush')
-            return StraightFlush(9, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = StraightFlush(9)
         elif 4 in value_map.values():
             print('four of a kind')
-            return FourOfAKind(8, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = FourOfAKind(8)
         elif 3 in value_map.values() and 2 in value_map.values():
             print('full house')
-            return FullHouse(7, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = FullHouse(7)
         elif is_flush:
             print('flush')
-            return Flush(6, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = Flush(6)
         elif is_straight:
             print('straight')
-            return Straight(5, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = Straight(5)
         elif 3 in value_map.values():
             print('three of a kind')
-            return ThreeOfAKind(4, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = ThreeOfAKind(4)
         elif len({k:v for k,v in value_map.items() if v==2}) is 2:
             print('two pair')
-            return TwoPair(3, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = TwoPair(3)
         elif 2 in value_map.values():
             print('one pair')
-            return Pair(2, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = Pair(2)
         else:
             print('high card')
-            return HighCard(1, cards, value_map, suit_map, max_card, is_straight, is_flush)
+            o = HighCard(1)
+
+        o.cards = cards
+        o.value_map = value_map
+        o.suit_map = suit_map
+        o.max_card = max_card
+        o.is_straight = is_straight
+        o.is_flush = is_flush
+
+        return o
 
     def __lt__(self, other):
         if type(self) != type(other):
-            print("here")
-            print(self.major_group)
-            print(other.major_group)
             return self.major_group < other.major_group
         else:
-            return self.compare(other)
+            return self.compare(other) < 0
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            return self.major_group > other.major_group
+        else:
+            return self.compare(other) > 0
+
+    def __eq__(self, other):
+        if self.major_group != other.major_group:
+            return False
+
+        return self.compare(other) == 0
 
 class RoyalFlush(Hand):
     def compare(self, other):
-        print("custom")
-        return False
+        return 0
 
 class StraightFlush(Hand):
     def compare(self, other):
-        return self.max_card < other.max_card
+        return self.max_card - other.max_card
 
 class FourOfAKind(Hand):
     def compare(self, other):
         print("custom")
-        fourOfKindA = [k for k,v in self.value_map.items() if v==4]
-        fourOfKindB = [k for k,v in other.value_map.items() if v==4]
-        print(fourOfKindA)
-        print(fourOfKindB)
-        if fourOfKindA == fourOfKindB:
-            kickerA = [k for k,v in self.value_map.items() if v==1]
-            kickerB= [k for k,v in other.value_map.items() if v==1]
-            print(kickerA)
-            print(kickerB)
-            return kickerA < kickerB
+        four_of_a_kind_a = [k for k,v in self.value_map.items() if v==4]
+        four_of_a_kind_b = [k for k,v in other.value_map.items() if v==4]
+        print(four_of_a_kind_a)
+        print(four_of_a_kind_b)
+        if four_of_a_kind_a == four_of_a_kind_b:
+            kicker_a = [k for k,v in self.value_map.items() if v==1]
+            kicker_b = [k for k,v in other.value_map.items() if v==1]
+            print(kicker_a)
+            print(kicker_b)
+            return kicker_a[0] - kicker_b[0]
         else:
-            return fourOfKindA < fourOfKindB
+            return four_of_a_kind_a[0] - four_of_a_kind_b[0]
 
 class FullHouse(Hand):
     def compare(self, other):
