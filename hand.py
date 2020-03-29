@@ -113,7 +113,7 @@ class RoyalFlush(Hand):
 
 class StraightFlush(Hand):
     def compare(self, other):
-        return self.max_card - other.max_card
+        return self.max_card.value - other.max_card.value
 
 class FourOfAKind(Hand):
     def compare(self, other):
