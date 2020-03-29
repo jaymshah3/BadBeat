@@ -133,18 +133,34 @@ class FourOfAKind(Hand):
 
 class FullHouse(Hand):
     def compare(self, other):
+        three_of_a_kind_a = [k for k,v in self.value_map.items() if v==3]
+        three_of_a_kind_b = [k for k,v in other.value_map.items() if v==3]
+        print(three_of_a_kind_a)
+        print(three_of_a_kind_b)
+        if three_of_a_kind_a == three_of_a_kind_b:
+            kicker_a = [k for k,v in self.value_map.items() if v==2]
+            kicker_b = [k for k,v in other.value_map.items() if v==2]
+            print(kicker_a)
+            print(kicker_b)
+            return kicker_a[0] - kicker_b[0]
+        else:
+            return three_of_a_kind_a[0] - three_of_a_kind_b[0]
         print("custom")
-        return True
 
 class Flush(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        for i in reversed(range(0,len(self.cards))):
+            print(i)
+            if self.cards[i].value != other.cards[i].value:
+                return self.cards[i].value - other.cards[i].value
+            else:
+                continue
+        #should never get hit
+        return 0
 
 class Straight(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        return self.max_card.value - other.max_card.value
 
 class ThreeOfAKind(Hand):
     def compare(self, other):
