@@ -212,6 +212,8 @@ class TwoPair(Hand):
 
 class Pair(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         pair_a = [k for k,v in self.value_map.items() if v==2]
         pair_b = [k for k,v in other.value_map.items() if v==2]
         print(pair_a)
@@ -237,5 +239,6 @@ class Pair(Hand):
 
 class HighCard(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
+        return self.max_card.value - other.max_card.value
