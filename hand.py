@@ -90,21 +90,14 @@ class Hand():
         return o
 
     def __lt__(self, other):
-        if type(self) != type(other):
-            return self.major_group < other.major_group
-        else:
-            return self.compare(other) < 0
+         return self.compare(other) < 0
 
     def __gt__(self, other):
-        if type(self) != type(other):
-            return self.major_group > other.major_group
-        else:
-            return self.compare(other) > 0
+        return self.compare(other) > 0
 
     def __eq__(self, other):
         if self.major_group != other.major_group:
             return False
-
         return self.compare(other) == 0
 
 class RoyalFlush(Hand):
@@ -113,10 +106,14 @@ class RoyalFlush(Hand):
 
 class StraightFlush(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         return self.max_card.value - other.max_card.value
 
 class FourOfAKind(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         print("custom")
         four_of_a_kind_a = [k for k,v in self.value_map.items() if v==4]
         four_of_a_kind_b = [k for k,v in other.value_map.items() if v==4]
@@ -133,6 +130,8 @@ class FourOfAKind(Hand):
 
 class FullHouse(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         three_of_a_kind_a = [k for k,v in self.value_map.items() if v==3]
         three_of_a_kind_b = [k for k,v in other.value_map.items() if v==3]
         print(three_of_a_kind_a)
@@ -149,6 +148,8 @@ class FullHouse(Hand):
 
 class Flush(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         for i in reversed(range(0,len(self.cards))):
             print(i)
             if self.cards[i].value != other.cards[i].value:
@@ -160,22 +161,79 @@ class Flush(Hand):
 
 class Straight(Hand):
     def compare(self, other):
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
         return self.max_card.value - other.max_card.value
 
 class ThreeOfAKind(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
+        three_of_a_kind_a = [k for k,v in self.value_map.items() if v==3]
+        three_of_a_kind_b = [k for k,v in other.value_map.items() if v==3]
+        print(three_of_a_kind_a)
+        print(three_of_a_kind_b)
+        if three_of_a_kind_a[0] == three_of_a_kind_b[0]:
+            one_of_a_kind_a = [k for k,v in self.value_map.items() if v==1]
+            one_of_a_kind_a.sort()
+            print(one_of_a_kind_a)
+            one_of_a_kind_b = [k for k,v in other.value_map.items() if v==1]
+            one_of_a_kind_b.sort()
+            print(one_of_a_kind_b)
+            if one_of_a_kind_a[1] == one_of_a_kind_b[1]:
+                return one_of_a_kind_a[0] - one_of_a_kind_b[0]
+            else:
+                return one_of_a_kind_a[1] - one_of_a_kind_b[1]
+        else:
+            return three_of_a_kind_a[0]-three_of_a_kind_b[0]
+
 
 class TwoPair(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        if self.major_group != other.major_group:
+            return self.major_group-other.major_group
+        two_of_a_kind_a = [k for k,v in self.value_map.items() if v==2]
+        two_of_a_kind_a.sort()
+        two_of_a_kind_b = [k for k,v in other.value_map.items() if v==2]
+        two_of_a_kind_b.sort()
+        print(two_of_a_kind_a)
+        print(two_of_a_kind_b)
+        if two_of_a_kind_a[1] == two_of_a_kind_b[1]:
+            if two_of_a_kind_a[0] == two_of_a_kind_b[0]:
+                one_of_a_kind_a = [k for k,v in self.value_map.items() if v==1]
+                print(one_of_a_kind_a)
+                one_of_a_kind_b = [k for k,v in other.value_map.items() if v==1]
+                print(one_of_a_kind_b)
+                return one_of_a_kind_a[0]-one_of_a_kind_b[0]
+            else:
+                return two_of_a_kind_a[0]-two_of_a_kind_b[0]
+        else:
+            return two_of_a_kind_a[1]-two_of_a_kind_b[1]
 
 class Pair(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        pair_a = [k for k,v in self.value_map.items() if v==2]
+        pair_b = [k for k,v in other.value_map.items() if v==2]
+        print(pair_a)
+        print(pair_b)
+        if pair_a[0] == pair_b[0]:
+            one_of_a_kind_a = [k for k,v in self.value_map.items() if v==1]
+            one_of_a_kind_a.sort(reverse=True)
+            print(one_of_a_kind_a)
+            one_of_a_kind_b = [k for k,v in other.value_map.items() if v==1]
+            one_of_a_kind_b.sort(reverse=True)
+            print(one_of_a_kind_b)
+            for i in range(0,len(one_of_a_kind_a)):
+                if one_of_a_kind_a[i] != one_of_a_kind_b:
+                    return one_of_a_kind_a[i] - one_of_a_kind_b[i]
+                else:
+                    continue
+            if one_of_a_kind_a[1] == one_of_a_kind_b[1]:
+                return one_of_a_kind_a[0] - one_of_a_kind_b[0]
+            else:
+                return one_of_a_kind_a[1] - one_of_a_kind_b[1]
+        else:
+            return pair_a[0]-pair_b[0]
 
 class HighCard(Hand):
     def compare(self, other):
