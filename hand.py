@@ -6,10 +6,10 @@ class Hand():
         cards = sorted(cards, key= lambda card:card.value)
         for b in cards:
             print(b.value)
-        if cards[0].value == 1:
-            max_card = cards[0]
-        else:
-            max_card = cards[4]
+        # if cards[0].value == 1:
+        #     max_card = cards[0]
+        # else:
+        #     max_card = cards[4]
         is_straight = False
         is_flush = False
         major_group = -1
@@ -117,16 +117,11 @@ class StraightFlush(Hand):
 
 class FourOfAKind(Hand):
     def compare(self, other):
-        print("custom")
         four_of_a_kind_a = [k for k,v in self.value_map.items() if v==4]
         four_of_a_kind_b = [k for k,v in other.value_map.items() if v==4]
-        print(four_of_a_kind_a)
-        print(four_of_a_kind_b)
-        if four_of_a_kind_a == four_of_a_kind_b:
+        if four_of_a_kind_a[0] == four_of_a_kind_b[0]:
             kicker_a = [k for k,v in self.value_map.items() if v==1]
             kicker_b = [k for k,v in other.value_map.items() if v==1]
-            print(kicker_a)
-            print(kicker_b)
             return kicker_a[0] - kicker_b[0]
         else:
             return four_of_a_kind_a[0] - four_of_a_kind_b[0]
@@ -135,27 +130,18 @@ class FullHouse(Hand):
     def compare(self, other):
         three_of_a_kind_a = [k for k,v in self.value_map.items() if v==3]
         three_of_a_kind_b = [k for k,v in other.value_map.items() if v==3]
-        print(three_of_a_kind_a)
-        print(three_of_a_kind_b)
-        if three_of_a_kind_a == three_of_a_kind_b:
+        if three_of_a_kind_a[0] == three_of_a_kind_b[0]:
             kicker_a = [k for k,v in self.value_map.items() if v==2]
             kicker_b = [k for k,v in other.value_map.items() if v==2]
-            print(kicker_a)
-            print(kicker_b)
             return kicker_a[0] - kicker_b[0]
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
-        print("custom")
 
 class Flush(Hand):
     def compare(self, other):
         for i in reversed(range(0,len(self.cards))):
-            print(i)
             if self.cards[i].value != other.cards[i].value:
                 return self.cards[i].value - other.cards[i].value
-            else:
-                continue
-        #should never get hit
         return 0
 
 class Straight(Hand):
@@ -164,20 +150,51 @@ class Straight(Hand):
 
 class ThreeOfAKind(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        three_of_a_kind_a = [k for k,v in self.value_map.items() if v==3]
+        three_of_a_kind_b = [k for k,v in other.value_map.items() if v==3]
+        if three_of_a_kind_a[0] == three_of_a_kind_b[0]:
+            kicker_a = sorted([k for k,v in self.value_map.items() if v==1])
+            kicker_b = sorted([k for k,v in other.value_map.items() if v==1])
+            if kicker_a[0] != kicker_b[0]:
+                return kicker_a[0] - kicker_b[0]
+            else:
+                return kicker_a[1] - kicker_b[1]
+        else:
+            return three_of_a_kind_a[0] - three_of_a_kind_b[0]
 
 class TwoPair(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        pair_a = sorted([k for k,v in self.value_map.items() if v==2])
+        pair_b = sorted([k for k,v in other.value_map.items() if v==2])
+
+        if pair_a[0] == pair_b[0]:
+            if pair_a[1] == pair_b[0]:
+                kicker_a = [k for k,v in self.value_map.items() if v==1]
+                kicker_b = [k for k,v in other.value_map.items() if v==1]
+                return kicker_a[0] - kicker_b[0]
+            else:
+                return pair_a[1] - pair_b[1]
+        else:
+            return pair_a[0] - pair_b[0]
 
 class Pair(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        pair_a = [k for k,v in self.value_map.items() if v==2]
+        pair_b = [k for k,v in other.value_map.items() if v==2]
+        
+        if pair_a[0] == pair_b[0]:
+            return pair_a[0] - pair_b[0]
+        else:
+            kicker_a = sorted([k for k,v in self.value_map.items() if v==1])
+            kicker_b = sorted([k for k,v in other.value_map.items() if v==1])
+            for i in reversed(range(0,len(3))):
+                if kicker_a[i] != kicker_b[i]:
+                    return kicker_a[i] - kicker_b[i]
+        return 0
 
 class HighCard(Hand):
     def compare(self, other):
-        print("custom")
-        return True
+        for i in reversed(range(0,len(self.cards))):
+            if self.cards[i].value != other.cards[i].value:
+                return self.cards[i].value - other.cards[i].value
+        return 0
