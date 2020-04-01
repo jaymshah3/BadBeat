@@ -155,10 +155,10 @@ class ThreeOfAKind(Hand):
         if three_of_a_kind_a[0] == three_of_a_kind_b[0]:
             kicker_a = sorted([k for k,v in self.value_map.items() if v==1])
             kicker_b = sorted([k for k,v in other.value_map.items() if v==1])
-            if kicker_a[0] != kicker_b[0]:
-                return kicker_a[0] - kicker_b[0]
-            else:
+            if kicker_a[1] != kicker_b[1]:
                 return kicker_a[1] - kicker_b[1]
+            else:
+                return kicker_a[0] - kicker_b[0]
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
 
@@ -167,15 +167,15 @@ class TwoPair(Hand):
         pair_a = sorted([k for k,v in self.value_map.items() if v==2])
         pair_b = sorted([k for k,v in other.value_map.items() if v==2])
 
-        if pair_a[0] == pair_b[0]:
-            if pair_a[1] == pair_b[0]:
+        if pair_a[1] == pair_b[1]:
+            if pair_a[0] == pair_b[0]:
                 kicker_a = [k for k,v in self.value_map.items() if v==1]
                 kicker_b = [k for k,v in other.value_map.items() if v==1]
                 return kicker_a[0] - kicker_b[0]
             else:
-                return pair_a[1] - pair_b[1]
+                return pair_a[0] - pair_b[0]
         else:
-            return pair_a[0] - pair_b[0]
+            return pair_a[1] - pair_b[1]
 
 class Pair(Hand):
     def compare(self, other):
