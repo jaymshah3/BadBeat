@@ -1,5 +1,6 @@
 from card import Card
 from hand import Hand
+from player import Player
 c = []
 c.append(Card(7,'c'))
 c.append(Card(4,'c'))
@@ -25,3 +26,6 @@ h2 = Hand.create_hand(d)
 #print(h2.is_straight)
 #print(h2.major_group)
 print(h > h2)
+
+player1 = Player("Jay",1500,1738,[Card(13,'h'),Card(14,'h')])
+player1.bet(1600)

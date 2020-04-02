@@ -6,10 +6,8 @@ class Hand():
         cards = sorted(cards, key= lambda card:card.value)
         for b in cards:
             print(b.value)
-        # if cards[0].value == 1:
-        #     max_card = cards[0]
-        # else:
-        #     max_card = cards[4]
+      
+        max_card = cards[4]
         is_straight = False
         is_flush = False
         major_group = -1
