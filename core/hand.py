@@ -1,11 +1,8 @@
-import card
 class Hand():
 
     @staticmethod
     def create_hand(cards):
         cards = sorted(cards, key= lambda card:card.value)
-        for b in cards:
-            print(b.value)
       
         max_card = cards[4]
         is_straight = False
