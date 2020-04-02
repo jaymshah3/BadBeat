@@ -23,12 +23,16 @@ class Round():
         curr_node.next_node = first_node
 
     def remove_current(self):
-        self.current_node.skip = True
-
-    def get_next_player(self):
         if self.current_node == self.start_node:
-            return self.current_node
-        else:
             next_node = self.current_node.next_node
             while next_node.skip:
                 next_node = next_node.next_node
+            self.start_node = next_node
+        self.current_node.skip = True
+       
+    def get_next_player(self):
+        next_node = self.current_node.next_node
+        while next_node.skip:
+            next_node = next_node.next_node
+        self.current_node = next_node
+        return next_node

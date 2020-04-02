@@ -1,4 +1,3 @@
-import card
 class Player():
 
     def __init__(self, name, bank, id_num, cards):
