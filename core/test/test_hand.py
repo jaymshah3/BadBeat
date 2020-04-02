@@ -11,6 +11,7 @@ class TestStraight(unittest.TestCase):
         two_six_a.append(Card(5,'c'))
         two_six_a.append(Card(6,'c'))
         two_six_a_hand = Hand.create_hand(two_six_a)
+        self.assertEqual(two_six_a_hand.major_group, 5)
 
         two_six_b = []
         two_six_b.append(Card(3,'s'))
@@ -20,6 +21,7 @@ class TestStraight(unittest.TestCase):
         two_six_b.append(Card(4,'h'))
         two_six_b_hand = Hand.create_hand(two_six_b)
 
+        self.assertEqual(two_six_a_hand.major_group, 5)
         self.assertEqual(two_six_a_hand, two_six_b_hand)
 
     def test_lt_without_ace(self):
@@ -31,6 +33,7 @@ class TestStraight(unittest.TestCase):
             two_six_a.append(Card(5,'c'))
             two_six_a.append(Card(6,'c'))
             two_six_a_hand = Hand.create_hand(two_six_a)
+            self.assertEqual(two_six_a_hand.major_group, 5)
 
             two_six_b = []
             two_six_b.append(Card(7,'c'))
@@ -40,4 +43,5 @@ class TestStraight(unittest.TestCase):
             two_six_b.append(Card(9,'s'))
             two_six_b_hand = Hand.create_hand(two_six_b)
 
+            self.assertEqual(two_six_a_hand.major_group, 5)
             self.assertLessThan(two_six_a_hand, two_six_b_hand)
