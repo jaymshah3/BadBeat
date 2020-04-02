@@ -24,8 +24,10 @@ class Hand():
 
     @staticmethod
     def find_is_straight(cards, max_card):
-        if max_card.value == 14: # if there is an ace, checking a straight's a bit different
-            if cards[0].value == 2 and cards[1].value == 3 and cards[2].value == 4 and cards[3].value == 5:
+        # if there is an ace, checking a straight's a bit different
+        if max_card.value == 14: 
+            if (cards[0].value == 2 and cards[1].value == 3 
+            and cards[2].value == 4 and cards[3].value == 5):
                 return True
         #normal way to check a straight with no ace 
         for i in range(len(cards)-1):
@@ -44,7 +46,8 @@ class Hand():
             suit_map[card.suit]+=1
         is_flush = Hand.find_is_flush(suit_map)
         is_straight = Hand.find_is_straight(cards, max_card) 
-        if is_flush and is_straight and max_card.value == 1 and cards[4].value == 13:
+        if (is_flush and is_straight and max_card.value == 1 
+        and cards[4].value == 13):
             print('royal flush')
             o = RoyalFlush(10)
         elif is_flush and is_straight:

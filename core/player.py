@@ -17,6 +17,6 @@ class Player():
     def withdraw_bank(self):
         if self.bank - self.current_contribution < 0:
             raise ValueError("Insuffient Funds")
-        self.bank - self.current_contribution
+        self.bank -= self.current_contribution
 
     
