@@ -28,12 +28,12 @@ class Hand():
         if max_card.value == 14: 
             if (cards[0].value == 2 and cards[1].value == 3 
             and cards[2].value == 4 and cards[3].value == 5):
-                return True
+                return (True, cards[3])
         #normal way to check a straight with no ace 
         for i in range(len(cards)-1):
             if cards[i+1].value - cards[i].value != 1:
-                return False
-        return True
+                return (False, None)
+        return (True, max_card)
 
     @staticmethod
     def find_major_group(cards, value_map, suit_map, max_card):
@@ -45,37 +45,39 @@ class Hand():
                 value_map[card.value] = 1
             suit_map[card.suit]+=1
         is_flush = Hand.find_is_flush(suit_map)
-        is_straight = Hand.find_is_straight(cards, max_card) 
+        (is_straight, straight_max) = Hand.find_is_straight(cards, max_card) 
         if (is_flush and is_straight and max_card.value == 1 
         and cards[4].value == 13):
-            print('royal flush')
+            # print('royal flush')
             o = RoyalFlush(10)
         elif is_flush and is_straight:
-            print('straight flush')
+            max_card = straight_max
+            # print('straight flush')
             o = StraightFlush(9)
         elif 4 in value_map.values():
-            print('four of a kind')
+            # print('four of a kind')
             o = FourOfAKind(8)
         elif 3 in value_map.values() and 2 in value_map.values():
-            print('full house')
+            # print('full house')
             o = FullHouse(7)
         elif is_flush:
-            print('flush')
+            # print('flush')
             o = Flush(6)
         elif is_straight:
-            print('straight')
+            # print('straight')
+            max_card = straight_max
             o = Straight(5)
         elif 3 in value_map.values():
-            print('three of a kind')
+            # print('three of a kind')
             o = ThreeOfAKind(4)
         elif len({k:v for k,v in value_map.items() if v==2}) is 2:
-            print('two pair')
+            # print('two pair')
             o = TwoPair(3)
         elif 2 in value_map.values():
-            print('one pair')
+            # print('one pair')
             o = Pair(2)
         else:
-            print('high card')
+            # print('high card')
             o = HighCard(1)
 
         o.cards = cards

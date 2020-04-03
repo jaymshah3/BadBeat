@@ -3,7 +3,7 @@ from ..hand import Hand
 from ..card import Card
 
 class TestStraight(unittest.TestCase):
-    def test_equal(self):
+    def test_equal_without_ace(self):
         two_six_a = []
         two_six_a.append(Card(7,'c'))
         two_six_a.append(Card(4,'c'))
@@ -24,8 +24,28 @@ class TestStraight(unittest.TestCase):
         self.assertEqual(two_six_b_hand.major_group, 5)
         self.assertEqual(two_six_a_hand, two_six_b_hand)
 
+    def test_equal_with_ace(self):
+        two_six_a = []
+        two_six_a.append(Card(14,'c'))
+        two_six_a.append(Card(4,'c'))
+        two_six_a.append(Card(3,'d'))
+        two_six_a.append(Card(5,'c'))
+        two_six_a.append(Card(2,'c'))
+        two_six_a_hand = Hand.create_hand(two_six_a)
+        self.assertEqual(two_six_a_hand.major_group, 5)
+
+        two_six_b = []
+        two_six_b.append(Card(14,'s'))
+        two_six_b.append(Card(3,'c'))
+        two_six_b.append(Card(2,'d'))
+        two_six_b.append(Card(5,'c'))
+        two_six_b.append(Card(4,'h'))
+        two_six_b_hand = Hand.create_hand(two_six_b)
+
+        self.assertEqual(two_six_b_hand.major_group, 5)
+        self.assertEqual(two_six_a_hand, two_six_b_hand)
     
-    def test_lt_without_ace(self):
+    def test_without_ace(self):
         two_six_a = []
         two_six_a.append(Card(7,'c'))
         two_six_a.append(Card(4,'c'))
@@ -45,6 +65,34 @@ class TestStraight(unittest.TestCase):
 
         self.assertEqual(two_six_b_hand.major_group, 5)
         self.assertEqual(two_six_a_hand < two_six_b_hand, True)
+        self.assertEqual(two_six_a_hand > two_six_b_hand, False)
+        self.assertEqual(two_six_b_hand < two_six_a_hand, False)
+        self.assertEqual(two_six_b_hand > two_six_a_hand, True)
+
+    def test_with_ace(self):
+        two_six_a = []
+        two_six_a.append(Card(14,'c'))
+        two_six_a.append(Card(4,'c'))
+        two_six_a.append(Card(3,'s'))
+        two_six_a.append(Card(5,'s'))
+        two_six_a.append(Card(2,'s'))
+        two_six_a_hand = Hand.create_hand(two_six_a)
+        self.assertEqual(two_six_a_hand.major_group, 5)
+
+        two_six_b = []
+        two_six_b.append(Card(7,'c'))
+        two_six_b.append(Card(8,'c'))
+        two_six_b.append(Card(10,'d'))
+        two_six_b.append(Card(6,'h'))
+        two_six_b.append(Card(9,'s'))
+        two_six_b_hand = Hand.create_hand(two_six_b)
+
+        self.assertEqual(two_six_b_hand.major_group, 5)
+        self.assertEqual(two_six_a_hand < two_six_b_hand, True)
+        self.assertEqual(two_six_a_hand > two_six_b_hand, False)
+        self.assertEqual(two_six_b_hand < two_six_a_hand, False)
+        self.assertEqual(two_six_b_hand > two_six_a_hand, True)
+
     
 class TestThreeOfAKind(unittest.TestCase):
     def test_equal(self):
@@ -88,6 +136,7 @@ class TestThreeOfAKind(unittest.TestCase):
 
         self.assertEqual(three_seven_b_hand.major_group, 4)
         self.assertEqual(three_seven_a_hand < three_seven_b_hand, True)
+        
     def test_lt_fifth_card(self):
         three_seven_a = []
         three_seven_a.append(Card(7,'c'))
