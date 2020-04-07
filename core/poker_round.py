@@ -6,6 +6,7 @@ class PlayerNode():
 
 class Round():
     def __init__(self, players, start_index=0):
+        self.length = len(players)
         first_node = PlayerNode(players[0])
         curr_node = first_node
         if start_index == 0:
@@ -29,6 +30,7 @@ class Round():
                 next_node = next_node.next_node
             self.start_node = next_node
         self.current_node.skip = True
+        self.length -= 1
        
     def get_next_player(self):
         next_node = self.current_node.next_node
