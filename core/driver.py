@@ -52,7 +52,7 @@ class Driver():
                 player_round.remove_current()
 
             curr_player_obj = player_round.get_next_player()
-            
+
         self.highest_current_contribution = 0
 
     def get_options(self, player):
@@ -88,5 +88,5 @@ class Driver():
         all_cards = player_cards[:]
         all_cards.extend(middle_cards)
         all_hands = sorted(itertools.combinations(all_cards, 5), reverse=True)
-        return all_hands[len]
+        return all_hands[0]
         
