@@ -1,11 +1,14 @@
 class Player():
 
-    def __init__(self, name, bank, id_num, cards):
+    def __init__(self, name, bank, id_num):
         self.name = name
         self.bank = bank
         self.id_num = id_num
-        self.cards = sorted(cards, key= lambda card:card.value)
         self.current_contribution = 0
+        self.cards = None
+
+    def set_cards(self, cards):
+        self.cards = sorted(cards, key= lambda card:card.value)
 
     # this method will be called if a 
     # player chooses call as the amount var will be table's highest contribution

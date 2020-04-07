@@ -14,7 +14,7 @@ class Driver():
     # one round
     def run_round(self, start_index):
         player_round = Round(self.players, start_index)
-        # deal cards
+        # deal card
         # run betting loop
         # withdraw bank for each player
         # flop
@@ -89,4 +89,24 @@ class Driver():
         all_cards.extend(middle_cards)
         all_hands = sorted(itertools.combinations(all_cards, 5), reverse=True)
         return all_hands[0]
+
+    def deal_cards(self):
+        self.deck.shuffle()
+        for i in range(0, len(self.players)):
+            pair = [self.deck.get_top_card(), self.deck.get_top_card()]
+            self.players[i].set_cards(pair)  
         
+def main():
+    one = Player("Jay", 1000, 1)
+    two = Player("Aditya", 1000, 2)
+    three = Player("Sri", 1000, 3)
+    players = [one, two, three]
+    driver = Driver(players)
+    while len(driver.players) > 1:
+        driver.deal_cards()
+        driver.run_round()
+        for p in driver.players:
+            # ask if still play
+            stay = None
+            if not stay:
+                driver.players.remove(p)
