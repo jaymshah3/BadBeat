@@ -6,6 +6,7 @@ class PlayerNode():
 
 class Round():
     def __init__(self, players, start_index=0):
+        self.players = players
         self.length = len(players)
         first_node = PlayerNode(players[0])
         curr_node = first_node
@@ -38,3 +39,12 @@ class Round():
             next_node = next_node.next_node
         self.current_node = next_node
         return next_node
+
+    def get_current_players(self):
+        pointer = self.current_node.next_node
+        current_players = []
+        while pointer != self.current_node:
+            if not pointer.skip:
+                current_players.append(pointer.player)
+            pointer = pointer.next_node
+        return current_players
