@@ -1,6 +1,6 @@
 from deck import Deck
 from poker_round import Round
-
+from player import Player
 class Driver():
     def __init__(self, players):
         self.players = players
@@ -28,8 +28,21 @@ class Driver():
         next_player = player_round.get_next_player()
 
         while next_player.player != initiator:
+            options = self.get_options(next_player.player)
             # get action for next_player
             # call method on that player
             # if required, change initiator (local variable) 
             # next_player = player_round.get_next_player()
             pass
+
+    def get_options(self, player):
+        options = []
+        options.append("fold")
+        if (self.highest_current_contribution == 0 or 
+        player.current_contribution < self.highest_current_contribution):
+            options.append("raise")
+        if player.current_contribution < self.highest_current_contribution:
+            options.append("call")
+        if self.highest_current_contribution == 0:
+           options.append("check")
+        return options
