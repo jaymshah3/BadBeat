@@ -1,6 +1,7 @@
 from deck import Deck
 from poker_round import Round
 from player import Player
+from hand import Hand
 import itertools
 
 class Driver():
@@ -14,14 +15,11 @@ class Driver():
     # one round
     def run_round(self, start_index):
         player_round = Round(self.players, start_index)
-        self.deck.shuffle()
         winner = []
-        # deal cards
-        # run betting loop
-         # withdraw bank for each player
-        run_betting_loop(player_round)
-        for player in player_round.get_current_players:
-            player.withdraw_bank
+
+        # self.run_betting_loop(player_round)
+        for player in player_round.get_current_players():
+            player.withdraw_bank()
             player.current_contribution = 0
         if player_round.length == 1:
             winner.append(player_round.get_current_players())
@@ -30,12 +28,19 @@ class Driver():
             return
         self.pot += self.current_round_pot
         self.current_round_pot = 0
-        # flop
-        # run betting loop
-        # withdraw bank for each player
-        run_betting_loop(player_round)
-        for player in player_round.get_current_players:
-            player.withdraw_bank
+        
+        cards = [
+            self.deck.get_top_card(),
+            self.deck.get_top_card(),
+            self.deck.get_top_card()
+        ]
+        print("CARDS")
+        for c in cards:
+            print(c)
+
+        # self.run_betting_loop(player_round)
+        for player in player_round.get_current_players():
+            player.withdraw_bank()
             player.current_contribution = 0
         if player_round.length == 1:
             winner.append(player_round.get_current_players())
@@ -45,12 +50,14 @@ class Driver():
         self.pot += self.current_round_pot
         self.current_round_pot = 0
 
-        # turn
-        # run betting loop
-        # withdraw bank for each player
-        run_betting_loop(player_round)
-        for player in player_round.get_current_players:
-            player.withdraw_bank
+        print("CARDS")
+        cards.append(self.deck.get_top_card())
+        for c in cards:
+            print(c)
+
+        # self.run_betting_loop(player_round)
+        for player in player_round.get_current_players():
+            player.withdraw_bank()
             player.current_contribution = 0
         if player_round.length == 1:
             winner.append(player_round.get_current_players())
@@ -59,19 +66,22 @@ class Driver():
             return
         self.pot += self.current_round_pot
         self.current_round_pot = 0
-        # river
-        # run betting loop
-        # withdraw bank for each player
-        run_betting_loop(player_round)
+        
+        print("CARDS")
+        cards.append(self.deck.get_top_card())
+        for c in cards:
+            print(c)
+
+        # self.run_betting_loop(player_round)
         for player in self.players:
-            player.withdraw_bank
+            player.withdraw_bank()
             player.current_contribution = 0
         self.pot += self.current_round_pot
         self.current_round_pot = 0
-        winner = self.find_winners(player_round.get_current_players)
+
+        print()
+        winner = self.find_winners(player_round.get_current_players(), cards)
         self.assign_winnings(winner)
-        # assign winner(s)
-        # assign winnings
 
     def run_betting_loop(self, player_round):
         initiator = player_round.start_node
@@ -115,8 +125,10 @@ class Driver():
         best_hands = [self.get_player_winning_hand(x.cards, middle_cards) for x in players]
         winning_players = [players[0]]
         winning_hands = [best_hands[0]]
+        print(str(players[0]) + " has a " + str(best_hands[0]))
 
         for i in range(1, len(best_hands)):
+            print(str(players[i]) + " has a " + str(best_hands[i]))
             if best_hands[i] < winning_hands[0]:
                 continue
             elif best_hands[i] > winning_hands[0]:
@@ -126,19 +138,24 @@ class Driver():
                 winning_hands.append(best_hands[i])
                 winning_players.append(players[i])
 
+        outp = ""
+        for w in winning_players:
+            outp += str(w) + " "
+        print("Winners are: " + outp)
         return winning_players
 
     def get_player_winning_hand(self, player_cards, middle_cards):
         all_cards = player_cards[:]
         all_cards.extend(middle_cards)
-        all_hands = sorted(itertools.combinations(all_cards, 5), reverse=True)
+        all_hands = sorted([Hand.create_hand(x) for x in itertools.combinations(all_cards, 5)], reverse=True)
         return all_hands[0]
 
     def deal_cards(self):
         self.deck.shuffle()
         for i in range(0, len(self.players)):
             pair = [self.deck.get_top_card(), self.deck.get_top_card()]
-            self.players[i].set_cards(pair)  
+            self.players[i].set_cards(pair)
+            print(str(self.players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))  
 
     def assign_winnings(self, winner):
         if len(winner) == 1:
@@ -154,13 +171,20 @@ def main():
     two = Player("Aditya", 1000, 2)
     three = Player("Sri", 1000, 3)
     players = [one, two, three]
+    start_player = 0
     driver = Driver(players)
     while len(driver.players) > 1:
         driver.deal_cards()
-        driver.run_round()
+        print()
+        driver.run_round(start_player)
         for p in driver.players:
             # ask if still play
             stay = None
             if not stay:
                 driver.players.remove(p)
+        start_player += 1
+        start_player = start_player % len(driver.players)
+
+if __name__ == "__main__":
+    main()
 

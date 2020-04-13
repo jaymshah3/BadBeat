@@ -9,11 +9,12 @@ class Hand():
         is_flush = False
         major_group = -1
         value_map = {}
-        suit_map = {'s': 0,'h' :0,'c':0,'d':0}
+        suit_map = {'S': 0,'H' :0,'C':0,'D':0}
         return Hand.find_major_group(cards, value_map, suit_map, max_card)
 
-    def __init__(self, num):
+    def __init__(self, num, cards):
         self.major_group = num
+        self.cards = cards
 
     @staticmethod
     def find_is_flush(suit_map):
@@ -49,36 +50,36 @@ class Hand():
         if (is_flush and is_straight and max_card.value == 1 
         and cards[4].value == 13):
             # print('royal flush')
-            o = RoyalFlush(10)
+            o = RoyalFlush(10, cards)
         elif is_flush and is_straight:
             max_card = straight_max
             # print('straight flush')
-            o = StraightFlush(9)
+            o = StraightFlush(9, cards)
         elif 4 in value_map.values():
             # print('four of a kind')
-            o = FourOfAKind(8)
+            o = FourOfAKind(8, cards)
         elif 3 in value_map.values() and 2 in value_map.values():
             # print('full house')
-            o = FullHouse(7)
+            o = FullHouse(7, cards)
         elif is_flush:
             # print('flush')
-            o = Flush(6)
+            o = Flush(6, cards)
         elif is_straight:
             # print('straight')
             max_card = straight_max
-            o = Straight(5)
+            o = Straight(5, cards)
         elif 3 in value_map.values():
             # print('three of a kind')
-            o = ThreeOfAKind(4)
+            o = ThreeOfAKind(4, cards)
         elif len({k:v for k,v in value_map.items() if v==2}) is 2:
             # print('two pair')
-            o = TwoPair(3)
+            o = TwoPair(3, cards)
         elif 2 in value_map.values():
             # print('one pair')
-            o = Pair(2)
+            o = Pair(2, cards)
         else:
             # print('high card')
-            o = HighCard(1)
+            o = HighCard(1, cards)
 
         o.cards = cards
         o.value_map = value_map
@@ -111,9 +112,23 @@ class RoyalFlush(Hand):
     def compare(self, other):
         return 0
 
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "royal flush " + outp
+
 class StraightFlush(Hand):
     def compare(self, other):
         return self.max_card.value - other.max_card.value
+
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "straight flush " + outp
 
 class FourOfAKind(Hand):
     def compare(self, other):
@@ -125,6 +140,13 @@ class FourOfAKind(Hand):
             return kicker_a[0] - kicker_b[0]
         else:
             return four_of_a_kind_a[0] - four_of_a_kind_b[0]
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "four of a kind " + outp
 
 class FullHouse(Hand):
     def compare(self, other):
@@ -137,16 +159,37 @@ class FullHouse(Hand):
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
 
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "full house " + outp
+
 class Flush(Hand):
     def compare(self, other):
         for i in reversed(range(0,len(self.cards))):
             if self.cards[i].value != other.cards[i].value:
                 return self.cards[i].value - other.cards[i].value
         return 0
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "flush " + outp
 
 class Straight(Hand):
     def compare(self, other):
         return self.max_card.value - other.max_card.value
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "straight " + outp
 
 class ThreeOfAKind(Hand):
     def compare(self, other):
@@ -161,6 +204,13 @@ class ThreeOfAKind(Hand):
                 return kicker_a[0] - kicker_b[0]
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "three of a kind " + outp
 
 class TwoPair(Hand):
     def compare(self, other):
@@ -176,21 +226,36 @@ class TwoPair(Hand):
                 return pair_a[0] - pair_b[0]
         else:
             return pair_a[1] - pair_b[1]
+        
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "two pair " + outp
 
 class Pair(Hand):
     def compare(self, other):
         pair_a = [k for k,v in self.value_map.items() if v==2]
         pair_b = [k for k,v in other.value_map.items() if v==2]
         
-        if pair_a[0] == pair_b[0]:
+        if pair_a[0] != pair_b[0]:
             return pair_a[0] - pair_b[0]
         else:
             kicker_a = sorted([k for k,v in self.value_map.items() if v==1])
             kicker_b = sorted([k for k,v in other.value_map.items() if v==1])
-            for i in reversed(range(0,len(3))):
+            for i in reversed(range(0,3)):
                 if kicker_a[i] != kicker_b[i]:
                     return kicker_a[i] - kicker_b[i]
         return 0
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "pair " + outp
+
 
 class HighCard(Hand):
     def compare(self, other):
@@ -198,3 +263,10 @@ class HighCard(Hand):
             if self.cards[i].value != other.cards[i].value:
                 return self.cards[i].value - other.cards[i].value
         return 0
+    
+    def __str__(self):
+        outp = ""
+        for c in self.cards:
+            outp += c.str_condensed()
+            outp += ", "
+        return "high card " + outp

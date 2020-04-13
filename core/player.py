@@ -10,6 +10,9 @@ class Player():
     def set_cards(self, cards):
         self.cards = sorted(cards, key= lambda card:card.value)
 
+    def __str__(self):
+        return self.name + "[" + str(self.id_num) + "]"
+
     # this method will be called if a 
     # player chooses call as the amount var will be table's highest contribution
     def bet(self,amount):

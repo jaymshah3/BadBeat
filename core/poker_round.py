@@ -41,8 +41,9 @@ class Round():
         return next_node
 
     def get_current_players(self):
-        pointer = self.current_node.next_node
         current_players = []
+        current_players.append(self.current_node.player)
+        pointer = self.current_node.next_node
         while pointer != self.current_node:
             if not pointer.skip:
                 current_players.append(pointer.player)
