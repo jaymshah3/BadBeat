@@ -9,6 +9,7 @@ clients = {}
 memory = GameDataService()
 active_clients = 0
 room_owner = -1
+has_game_started = False
 lock = Lock()
 
 @socketio.on('fold')
@@ -54,6 +55,8 @@ def handle_join_request(data,approve):
         memory.add_player(data['username'],active_clients,data['bank'])
     else:
         emit('reject request', {'message': "Request to Join Rejected"}, room=clients[data['username']])
+    if active_clients >= 2 and not has_game_started:
+        emit('start option',{'message': "Start option enabled"}, room=room_owner)
 
 @socketio.on('leave')
 def on_leave(data):
@@ -66,7 +69,8 @@ def on_leave(data):
 
 @socketio.on('start')
 def on_start(data):
-    emit('server_start', 'Game has started', broadcast=True)
+    has_game_started = True
+    emit('server_start', {'message': "Game has started"}, broadcast=True)
 
 def change_active_clients(increment):
     lock.acquire()
