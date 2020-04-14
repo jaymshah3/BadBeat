@@ -7,6 +7,7 @@ socketio = SocketIO(app)
 clients = []
 memory = GameDataService()
 active_clients = 0
+room_owner = -1
 @socketio.on('fold')
 def handleFold(data):
     pass
@@ -29,16 +30,20 @@ def on_join(data):
     clients.append(request.sid)
     join_room(room)
     send(username + ' has entered the room.', room=room)
+    if active_clients == 0:
+        room_owner = request.sid
     active_clients++
     
 @socket.io('request to join')
 def request_to_join(data):
-    emit('join request', data, room =clients[0])
+    if request.sid == room_owner:
+        memory.add_player(data['name'],active_clients,data['bank'])
+        return
+    emit('join request', data, room =room_owner)
 
 @socket.io('approve join request'):
 def approve_join_request(data):
-    id_num = active_clients
-    memory.add_player(data['name'],id_num,data['bank'])
+    memory.add_player(data['name'],active_clients,data['bank'])
 
 @socketio.on('leave')
 def on_leave(data):
