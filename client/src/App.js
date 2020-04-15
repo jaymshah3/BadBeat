@@ -1,17 +1,25 @@
 import React, { Component } from 'react';
 import './App.css';
 import { Button, TextField } from '@material-ui/core';
-import socketIOClient from 'socket.io-client';
+import io from 'socket.io-client';
 
 class App extends Component {
   constructor() {
     super();
     this.state = {
       socket: null,
+      endpoint: 'http://localhost:5000',
       username: '',
       isInGame: false,
       joinRequests: [{name:"aditya", bank: 5000}]
     };
+  }
+
+  componentDidMount() {
+    const { endpoint } = this.state;
+    console.log(endpoint);
+    const socket = io(endpoint);
+    this.setState({socket: socket})
   }
 
   render() {
@@ -68,22 +76,21 @@ class App extends Component {
   }
 
   joinGame() {
+    const { socket } = this.state;
+
     this.setState({isInGame: true});
-  //   const { endpoint } = this.state;
-  //   const socket = socketIOClient();
-  //   this.setState({socket: socket})
-  //   socket.emit('request to join', {
-  //     username: 'jawn',
-  //     room: 1,
-  //   })
-  //   socket.on('join request', (data) => {
-  //     this.setState((state) => {
-  //       const joinRequests = state.joinRequests.concat(data)
-  //       return {
-  //         joinRequests
-  //       }
-  //     })
-  //   })
+    socket.emit('request to join', {
+      username: 'jawn',
+      room: 1,
+    })
+    socket.on('join request', (data) => {
+      this.setState((state) => {
+        const joinRequests = state.joinRequests.concat(data)
+        return {
+          joinRequests
+        }
+      })
+    })
   }
 }
 

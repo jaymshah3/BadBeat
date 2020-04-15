@@ -1,27 +1,36 @@
 from flask import Flask, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from web.GameDataService import GameDataService
+from GameDataService import GameDataService
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+
+socketio = SocketIO()
+socketio.init_app(app, cors_allowed_origins='*')
+
 clients = []
 memory = GameDataService()
 active_clients = 0
 room_owner = -1
+
+@socketio.on('connect')
+def handle_connect():
+    print('connected')
+
 @socketio.on('fold')
-def handleFold(data):
+def handle_fold(data):
     pass
 
 @socketio.on('raise')
-def handleRaise(data):
+def handle_raise(data):
     pass
 
 @socketio.on('call')
-def handleCall(data):
+def handle_call(data):
     pass
 
 def ack():
-    print ('message was received!')
+    print('message was received!')
 
 @socketio.on('join')
 def on_join(data):
@@ -32,16 +41,16 @@ def on_join(data):
     send(username + ' has entered the room.', room=room)
     if active_clients == 0:
         room_owner = request.sid
-    active_clients++
+    active_clients += 1
     
-@socket.io('request to join')
+@socketio.on('request to join')
 def request_to_join(data):
     if request.sid == room_owner:
         memory.add_player(data['name'],active_clients,data['bank'])
         return
     emit('join request', data, room =room_owner)
 
-@socket.io('approve join request'):
+@socketio.on('approve join request')
 def approve_join_request(data):
     memory.add_player(data['name'],active_clients,data['bank'])
 
@@ -58,6 +67,6 @@ def on_start(data):
     emit('server_start', 'Game has started', broadcast=True)
 
 
-
 if __name__ == '__main__':
     socketio.run(app)
+    
