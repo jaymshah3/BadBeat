@@ -39,6 +39,8 @@ def ack():
 @socketio.on('request to join')
 def request_to_join(data):
     global clients
+    global active_clients
+    global room_owner
     username = data['username']
     room = data['room']
     lock.acquire()
@@ -48,9 +50,10 @@ def request_to_join(data):
         emit('error request to join' ,{'message': "Username already exists"}, room=request.sid)
     lock.release()
     join_room(room)
-    send(username + ' has entered the room.', room=room)
+    #send(username + ' has entered the room.', room=room)
     if active_clients == 0:
         room_owner = request.sid
+        emit('owner', {'message': "you are owner"}, room=room_owner)
         change_active_clients(True)
     if request.sid == room_owner:
         memory.add_player(data['username'],active_clients,data['bank'])
@@ -60,13 +63,14 @@ def request_to_join(data):
 @socketio.on('handle join request')
 def handle_join_request(data,approve):
     global memory
+    global active_clients
     if approve:
+        emit("user has joined", {'message': str(data['username']) + " has joined" },
+         room=data['room'])
         change_active_clients(True)
         memory.add_player(data['username'],active_clients,data['bank'])
     else:
         emit('reject request', {'message': "Request to Join Rejected"}, room=clients[data['username']])
-    if active_clients >= 2 and not has_game_started:
-        emit('start option',{'message': "Start option enabled"}, room=room_owner)
 
 @socketio.on('leave')
 def on_leave(data):
@@ -81,8 +85,10 @@ def on_leave(data):
 @socketio.on('start')
 def on_start(data):
     global has_game_started
+    room = data['room']
     has_game_started = True
-    emit('server_start', {'message': "Game has started"}, broadcast=True)
+    emit('server_start', {'message': "Game has started"}, room=room)
+
 
 def change_active_clients(increment):
     global active_clients
@@ -94,5 +100,5 @@ def change_active_clients(increment):
     lock.release()
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app,debug=True)
     
