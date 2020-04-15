@@ -82,6 +82,7 @@ class App extends Component {
     socket.emit('request to join', {
       username: 'jawn',
       room: 1,
+      bank: 1000
     })
     socket.on('join request', (data) => {
       this.setState((state) => {
