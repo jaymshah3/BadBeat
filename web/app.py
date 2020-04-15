@@ -38,6 +38,7 @@ def ack():
     
 @socketio.on('request to join')
 def request_to_join(data):
+    global clients
     username = data['username']
     room = data['room']
     lock.acquire()
@@ -58,6 +59,7 @@ def request_to_join(data):
 
 @socketio.on('handle join request')
 def handle_join_request(data,approve):
+    global memory
     if approve:
         change_active_clients(True)
         memory.add_player(data['username'],active_clients,data['bank'])
@@ -68,6 +70,7 @@ def handle_join_request(data,approve):
 
 @socketio.on('leave')
 def on_leave(data):
+    global clients
     username = data['username']
     room = data['room']
     del clients[username]
@@ -77,6 +80,7 @@ def on_leave(data):
 
 @socketio.on('start')
 def on_start(data):
+    global has_game_started
     has_game_started = True
     emit('server_start', {'message': "Game has started"}, broadcast=True)
 
