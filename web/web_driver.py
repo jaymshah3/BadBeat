@@ -228,6 +228,7 @@ def handle_call(data):
         #error
     current_player.bet(data['amount'])
     current_round_pot += current_player.current_contribution
+    broadcast_pot(current_round_pot)
     emit('player called', {data}, broadcast=True)
     current_player = player_round.get_next_player().player
     if initiator.name == current_player.name:
@@ -253,6 +254,7 @@ def handle_raise(data):
     current_player.bet(data['amount'])
     highest_current_contribution = data['amount'] + current_player.current_contribution
     current_round_pot += current_player.current_contribution
+    broadcast_pot(current_round_pot)
     emit('player raised', {data}, broadcast=True)
     initiator = current_player
     current_player = player_round.get_next_player().player
@@ -262,17 +264,95 @@ def run_next_game_state(next_game_state):
     global highest_current_contribution
     global pot
     global current_round_pot
+    global player_round
+    for player in player_round.get_current_players():
+        player.withdraw_bank()
+        emit('withdraw bank', {'amount': player.current_contribution}, room=clients[player.name])
+        player.current_contribution = 0
     highest_current_contribution = 0
     pot += current_round_pot
+    broadcast_pot(pot)
     current_round_pot = 0
     if next_game_state.value == 2:
-        # call Flop
+        flop()
     elif next_game_state.value ==3:
-        # call Turn
+        turn()
     elif next_game_state.value == 4:
-        # call river
+        river()
     else:
-        # call find_winner
+        find_winners()
+
+def flop():
+    global community_cards
+    global deck
+    global initiator
+    global player_round
+    global current_player
+    community_cards = [
+            deck.get_top_card(),
+            deck.get_top_card(),
+            deck.get_top_card()
+        ]
+    broadcast_community_cards()
+    initiator = player_round.start_node.player
+    current_player = player_round.get_next_player().player
+    get_options()
+
+def turn():
+    global community_cards
+    global deck
+    global initiator
+    global player_round
+    global current_player
+    community_cards.append(deck.get_top_card())
+    broadcast_community_cards()
+    initiator = player_round.start_node.player
+    current_player = player_round.get_next_player().player
+    get_options()
+def river():
+    global community_cards
+    global deck
+    global initiator
+    global player_round
+    global current_player
+    community_cards.append(deck.get_top_card())
+    broadcast_community_cards()
+    initiator = player_round.start_node.player
+    current_player = player_round.get_next_player().player
+    get_options()
+
+def find_winners():
+    players = player_round.get_current_players()
+    middle_cards = community_cards
+    best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
+    winning_players = [players[0]]
+    winning_hands = [best_hands[0]]
+    emit('best hand', {'best hand': str(best_hands[0])},room=clients[players[0]])
+    print(str(players[0]) + " has a " + str(best_hands[0]))
+    for i in range(1, len(best_hands)):
+        print(str(players[i]) + " has a " + str(best_hands[i]))
+        emit('best hand', {'best hand': str(best_hands[i])},room=clients[players[i]])
+        if best_hands[i] < winning_hands[0]:
+            continue
+        elif best_hands[i] > winning_hands[0]:
+            winning_hands = [best_hands[i]]
+            winning_players = [players[i]]
+        else:
+            winning_hands.append(best_hands[i])
+            winning_players.append(players[i])
+
+    outp = ""
+    for w in winning_players:
+        outp += str(w) + " "
+    print("Winners are: " + outp)
+    emit('winners', {'winners': outp}, broadcast=True)
+    return winning_players
+def get_player_winning_hand(player_cards, middle_cards):
+    all_cards = player_cards[:]
+    all_cards.extend(middle_cards)
+    all_hands = sorted([Hand.create_hand(x) for x in itertools.combinations(all_cards, 5)], reverse=True)
+    return all_hands[0]
+
 def get_options():
     options = []
     options.append("fold")
@@ -294,7 +374,7 @@ def deal_cards():
         pair = [deck.get_top_card(), deck.get_top_card()]
         players[i].set_cards(pair)
         print(str(players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))
-        emit('dealt cards', {cards: [{'value':pair[0].val, 'suit': pair[0].suit},
+        emit('dealt cards', {'cards': [{'value':pair[0].val, 'suit': pair[0].suit},
             {'value':pair[1].val, 'suit': pair[1].suit}]},
             room=clients[players[i].name]) 
 
@@ -326,4 +406,8 @@ def preflop(given_players,given_clients):
         start_player = start_player % len(driver.players)
 
 
-
+def broadcast_pot(amount):
+    emit('pot update', {'pot': amount}, broadcast=True)
+def broadcast_community_cards():
+    global community_cards
+    emit('community cards', {community_cards}, broadcast=True)
