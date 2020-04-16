@@ -2,25 +2,34 @@ from core.deck import Deck
 from core.poker_round import Round
 from core.player import Player
 from core.hand import Hand
+from enum import Enum
 import itertools
-from flask import Flask, request
 try:
     from __main__ import socketio, join_room, leave_room, send, emit
 except ImportError:
     from flask_socketio import socketio, join_room, leave_room, send, emit
 
+class GameState(Enum):
+    PREFLOP = 1
+    FLOP = 2
+    TURN = 3
+    RIVER = 4
+    WINNER = 5
 
-class Driver():
-    def __init__(self, players):
-        self.players = players
-        self.pot = 0
-        self.current_round_pot = 0
-        self.deck = Deck()
-        self.highest_current_contribution = 0
-        self.clients = {}
-        self.cards = []
+
+players = []
+pot = 0
+current_round_pot = 0
+deck = Deck()
+highest_current_contribution = 0
+clients = {}
+community_cards = []
+initiator = None
+player_round = None
+current_player = None
+game_state = GameState.PREFLOP
     # one round
-    def run_round(self, start_index):
+   '''  def run_round(self, start_index):
         player_round = Round(self.players, start_index)
         winner = []
 
@@ -91,10 +100,10 @@ class Driver():
         self.assign_winnings(winner)
     
     def run_betting_loop(self, player_round):
-        initiator = player_round.start_node
+        self.initiator = player_round.start_node
         curr_player_obj = player_round.get_next_player()
 
-        while curr_player_obj != initiator:
+        while curr_player_obj != self.initiator:
             curr_player = curr_player_obj.player
             options = self.get_options(curr_player)
 
@@ -105,7 +114,7 @@ class Driver():
             amount = None
             if player_selection == "raise":
                 curr_player.bet(amount)
-                initiator = curr_player_obj
+                self.initiator = curr_player_obj
                 self.highest_current_contribution = amount + curr_player.current_contribution
             elif player_selection == "call":
                 curr_player.bet(amount)
@@ -116,19 +125,7 @@ class Driver():
 
         self.highest_current_contribution = 0
 
-    def get_options(self, player):
-        options = []
-        options.append("fold")
-        if (self.highest_current_contribution == 0 or 
-        player.current_contribution < self.highest_current_contribution):
-            options.append("raise")
-        if player.current_contribution < self.highest_current_contribution:
-            options.append("call")
-        if self.highest_current_contribution == 0:
-           options.append("check")
-    
-        emit('options for player', {options}, room=self.clients[player.name])
-        return options
+
 
     def find_winners(self, players, middle_cards):
         best_hands = [self.get_player_winning_hand(x.cards, middle_cards) for x in players]
@@ -159,16 +156,9 @@ class Driver():
         all_hands = sorted([Hand.create_hand(x) for x in itertools.combinations(all_cards, 5)], reverse=True)
         return all_hands[0]
 
-    def deal_cards(self):
-        self.deck.shuffle()
-        for i in range(0, len(self.players)):
-            pair = [self.deck.get_top_card(), self.deck.get_top_card()]
-            self.players[i].set_cards(pair)
-            print(str(self.players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))
-            emit('dealt cards', {'value_one': str(pair[0].val), 
-            'suit_one':str(pair[0].suit), 'value_two': str(pair[1].val), 
-            'suit_two':str(pair[1].suit),},room=self.clients[self.player[i].name])  
-
+     
+   
+   
     def assign_winnings(self, winner):
         if len(winner) == 1:
             winner[0].bank += self.pot
@@ -177,15 +167,152 @@ class Driver():
             for player in winner:
                 player.bank +=per_player_winnings
         self.pot = 0
+
+    def preflop(self):
+        # emit to appropriate client they are BB and take BB form clients bank
+        # emit to appropriate client they are SB and taek SB from clients bank
+        self.deal_cards()
+        self.player_round = Round(self.players, 0)
+        winner = [] 
+        self.current_player = self.player_round.get_next_player()
+        self.initiator = self.current_player
+        self.get_options()
+        pass
+     
+
+    @socketio.on('fold')
+    def handle_fold(data):
+        if data['username'] is not self.current_player.name:
+            #error
+            pass
+        self.curr_player = self.player_round.get_next_player()
+        if self.initiator == self.current_player:
+            self.game_state+
+
+    @socketio.on('call')
+    def handle_call(data):
+        pass
+
+    @socketio.on('raise')
+    def handle_raise(data):
+        pass
+
+    
+ '''
+@socketio.on('fold')
+def handle_fold(data):
+    global current_player
+    global player_round
+    global game_state
+    if data['username'] is not current_player.name:
+        pass
+        #error
+    player_round.remove_current()
+    emit('player folded', {data}, broadcast=True)
+    current_player = player_round.get_next_player().player
+    if initiator.name == current_player.name:
+        if game_state.value != 5:
+            game_state = (game_state.value+1)
+        # reached end of round, change our game state
+    else:
+        get_options()
+
+@socketio.on('call')
+def handle_call(data):
+    global current_player
+    global player_round
+    global game_state
+    global current_round_pot
+    if data['username'] is not current_player.name:
+        pass
+        #error
+    current_player.bet(data['amount'])
+    current_round_pot += current_player.current_contribution
+    emit('player called', {data}, broadcast=True)
+    current_player = player_round.get_next_player().player
+    if initiator.name == current_player.name:
+        if game_state.value != 5:
+            game_state = (game_state.value+1)
+            # reached end of round, change our game state
+    else:
+        get_options()
         
-def run(given_players,clients):
-   # one = Player("Jay", 1000, 1)
-    #two = Player("Aditya", 1000, 2)
-    #three = Player("Sri", 1000, 3)
-    #players = [one, two, three]
-    self.clients = clients
+
+
+@socketio.on('raise')
+def handle_raise(data):
+    global current_player
+    global player_round
+    global game_state
+    global current_round_pot
+    global initiator
+    global highest_current_contribution
+    if data['username'] is not current_player.name:
+        pass
+        #error
+    current_player.bet(data['amount'])
+    highest_current_contribution = data['amount'] + current_player.current_contribution
+    current_round_pot += current_player.current_contribution
+    emit('player raised', {data}, broadcast=True)
+    initiator = current_player
+    current_player = player_round.get_next_player().player
+    get_options()
+
+def run_next_game_state(next_game_state):
+    global highest_current_contribution
+    global pot
+    global current_round_pot
+    highest_current_contribution = 0
+    pot += current_round_pot
+    current_round_pot = 0
+    if next_game_state.value == 2:
+        # call Flop
+    elif next_game_state.value ==3:
+        # call Turn
+    elif next_game_state.value == 4:
+        # call river
+    else:
+        # call find_winner
+def get_options():
+    options = []
+    options.append("fold")
+    if (highest_current_contribution == 0 or 
+    current_player.current_contribution < highest_current_contribution):
+        options.append("raise")
+    if current_player.current_contribution < highest_current_contribution:
+        options.append("call")
+    if highest_current_contribution == 0:
+        options.append("check")
+    
+    emit('options for player', {options}, room=clients[current_player.name])
+
+def deal_cards():
+    global deck
+    global players
+    deck.shuffle()
+    for i in range(0, len(players)):
+        pair = [deck.get_top_card(), deck.get_top_card()]
+        players[i].set_cards(pair)
+        print(str(players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))
+        emit('dealt cards', {cards: [{'value':pair[0].val, 'suit': pair[0].suit},
+            {'value':pair[1].val, 'suit': pair[1].suit}]},
+            room=clients[players[i].name]) 
+
+def preflop(given_players,given_clients):
+    global players
+    global clients
+    global player_round
+    global current_player
+    global initiator
+    players = given_players
+    clients = given_clients
     start_player = 0
-    driver = Driver(given_players)
+    player_round = Round(players,start_player)
+    current_player = player_round.get_next_player().player
+    initiator = current_player
+    deal_cards()
+    get_options()
+    
     while len(driver.players) > 1:
         driver.deal_cards()
         print()
@@ -199,8 +326,4 @@ def run(given_players,clients):
         start_player = start_player % len(driver.players)
 
 
-
-
-if __name__ == "__main__":
-    run()
 

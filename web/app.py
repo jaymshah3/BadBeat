@@ -36,7 +36,7 @@ def request_to_join(data):
     if not clients.get(username,False):
         clients[username] = request.sid
     else:
-        emit('error request to join' ,{'message': "Username already exists"}, room=request.sid)
+        emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
     lock.release()
     join_room(room)
     #send(username + ' has entered the room.', room=room)
@@ -50,11 +50,11 @@ def request_to_join(data):
     emit('join request', data, room =room_owner)
 
 @socketio.on('handle join request')
-def handle_join_request(data,approve):
+def handle_join_request(data):
     global memory
     global active_clients
-    if approve:
-        emit("user has joined", {'message': str(data['username']) + " has joined" },
+    if data['approve']:
+        emit("user joined", data,
          room=data['room'])
         change_active_clients(True)
         memory.add_player(data['username'],active_clients,data['bank'])
@@ -78,8 +78,8 @@ def on_start(data):
     room = data['room']
     has_game_started = True
     emit('server_start', {'message': "Game has started"}, room=room)
-    run(memory.get_players,clients)
-
+    preflop(memory.get_players,clients)
+    
 
 def change_active_clients(increment):
     global active_clients
@@ -90,7 +90,7 @@ def change_active_clients(increment):
         active_clients-=1
     lock.release()
 
-from web_driver import run
+from web_driver import preflop
 if __name__ == '__main__':
     socketio.run(app,debug=True)
     
