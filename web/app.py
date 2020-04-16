@@ -57,8 +57,8 @@ def request_to_join(data):
         change_active_clients(True)
     if request.sid == room_owner:
         memory.add_player(data['username'],active_clients,data['bank'])
-        return
-    emit('join request', data, room =room_owner)
+    else:
+        emit('join request', data, room=room_owner)
 
 @socketio.on('handle join request')
 def handle_join_request(data,approve):

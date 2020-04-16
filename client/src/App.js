@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import { Button, TextField } from '@material-ui/core';
 import io from 'socket.io-client';
+import PreGameDashboard from './PreGameDashboard.js';
 
 class App extends Component {
   constructor() {
@@ -10,47 +11,51 @@ class App extends Component {
       socket: null,
       endpoint: 'http://localhost:5000',
       username: '',
-      isInGame: false,
-      joinRequests: [{name:"aditya", bank: 5000}]
+      isInPreGame: false,
+      requested: false,
+      owner: false
     };
   }
 
   componentDidMount() {
     const { endpoint } = this.state;
-    console.log(endpoint);
     const socket = io(endpoint);
+    console.log(socket);
     this.setState({socket: socket})
+
+    this.defineHandlers(socket);
+  }
+
+  defineHandlers(socket) {
+    socket.on('reject request', () => {
+      this.setState({requested: false});
+    });
+
+    socket.on('approve request', () => {
+      this.setState({requested: false, isInPreGame: true});
+    });
+
+    socket.on('owner', () => {
+      console.log('got owner')
+      this.setState({requested: false, isInPreGame: true, owner: true});
+    });
   }
 
   render() {
-    const { username, isInGame, joinRequests } = this.state;
+    const { username, isInPreGame, socket, owner } = this.state;
     const isDisabled = username == "" || username == undefined;
+    console.log('isInPreGame is ' + isInPreGame)
 
     const outOfGame = (
-      <form onSubmit={() => this.joinGame()}>
+      <div>
         <TextField value={this.state.username} onChange={this.handleUsernameChange} id="outlined-basic" label="Username" variant="outlined" />
-        <Button variant="contained" type="submit" disabled={isDisabled}>Join Game</Button>
-      </form>
+        <Button variant="contained" type="submit" disabled={isDisabled} onClick={() => this.joinGame()}>Join Game</Button>
+      </div>
     );
 
-    const inGame = (
-      <ul>
-          {
-            joinRequests.map((element) => {
-              return <li key={element.name}>
-                <div>
-                  <p>{element['name']}</p>
-                  <p>{element['bank']}</p>
-                  <Button variant="contained" color="primary" onClick={() => {this.handleRequest(element, true)}}>Approve</Button>
-                  <Button variant="contained" color="secondary" onClick={() => this.handleRequest(element, false)}>Reject</Button>
-                </div>
-              </li>
-            })
-          }
-        </ul>
-    );
+    const inPreGame = <PreGameDashboard socket={socket} owner={owner}/>;
 
-    const show = isInGame ? inGame : outOfGame;
+    const show = isInPreGame ? inPreGame : outOfGame;
 
     return (
       <div className="App">
@@ -65,32 +70,14 @@ class App extends Component {
     });
   }
 
-  handleRequest = (element, decision) => {
-    const { socket } = this.state;
-
-    if (decision) {
-      console.log("approve");
-    } else {
-      console.log("reject");
-    }
-  }
-
   joinGame() {
-    const { socket } = this.state;
+    const { socket, username } = this.state;
 
-    this.setState({isInGame: true});
+    this.setState({requested: true});
     socket.emit('request to join', {
-      username: 'jawn',
+      username: username,
       room: 1,
       bank: 1000
-    })
-    socket.on('join request', (data) => {
-      this.setState((state) => {
-        const joinRequests = state.joinRequests.concat(data)
-        return {
-          joinRequests
-        }
-      })
     })
   }
 }
