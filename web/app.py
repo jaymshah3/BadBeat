@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
 socketio = SocketIO()
-socketio.init_app(app, cors_allowed_origins='*')
+socketio.init_app(app, cors_allowepd_origins='*')
 
 clients = {}
 memory = GameDataService()
@@ -16,21 +16,10 @@ room_owner = -1
 has_game_started = False
 lock = Lock()
 
+
 @socketio.on('connect')
 def handle_connect():
     print('connected')
-
-@socketio.on('fold')
-def handle_fold(data):
-    pass
-
-@socketio.on('raise')
-def handle_raise(data):
-    pass
-
-@socketio.on('call')
-def handle_call(data):
-    pass
 
 def ack():
     print('message was received!')
@@ -85,9 +74,11 @@ def on_leave(data):
 @socketio.on('start')
 def on_start(data):
     global has_game_started
+    global memory
     room = data['room']
     has_game_started = True
     emit('server_start', {'message': "Game has started"}, room=room)
+    run(memory.get_players,clients)
 
 
 def change_active_clients(increment):
@@ -99,6 +90,7 @@ def change_active_clients(increment):
         active_clients-=1
     lock.release()
 
+from web_driver import run
 if __name__ == '__main__':
     socketio.run(app,debug=True)
     
