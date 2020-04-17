@@ -7,9 +7,14 @@ class JoinRequest extends Component {
 		super(props);
 	}
 
-	handleRequest = (element, decision) => {
-		const { socket } = this.props;
-		element['approve'] = decision;
+	handleRequest = (decision) => {
+		const { socket, username, bank, room } = this.props;
+		element = {
+			username: username,
+			bank: bank,
+			approve: decision,
+			room: room
+		}
 		socket.emit('handle join request', element);
 	}
 
@@ -21,8 +26,8 @@ class JoinRequest extends Component {
 				<div>
 					<p>{username}</p>
 					<p>{bank}</p>
-					<Button variant="contained" color="primary" onClick={() => {this.handleRequest(username, true)}}>Approve</Button>
-					<Button variant="contained" color="secondary" onClick={() => this.handleRequest(username, false)}>Reject</Button>
+					<Button variant="contained" color="primary" onClick={() => {this.handleRequest(true)}}>Approve</Button>
+					<Button variant="contained" color="secondary" onClick={() =>{this.handleRequest(false)}}>Reject</Button>
 				</div>
 			</li>
 		)
@@ -32,7 +37,8 @@ class JoinRequest extends Component {
 JoinRequest.propTypes = {
 	socket: any,
 	username: string,
-	bank: number
+	bank: number,
+	room: number
 }
 
 export default JoinRequest;

@@ -13,7 +13,8 @@ class App extends Component {
       username: '',
       isInPreGame: false,
       requested: false,
-      owner: false
+      isOwner: false,
+      room: -1
     };
   }
 
@@ -37,12 +38,12 @@ class App extends Component {
 
     socket.on('owner', () => {
       console.log('got owner')
-      this.setState({requested: false, isInPreGame: true, owner: true});
+      this.setState({requested: false, isInPreGame: true, isOwner: true});
     });
   }
 
   render() {
-    const { username, isInPreGame, socket, owner } = this.state;
+    const { username, isInPreGame, socket, isOwner, room } = this.state;
     const isDisabled = username == "" || username == undefined;
     console.log('isInPreGame is ' + isInPreGame)
 
@@ -53,7 +54,7 @@ class App extends Component {
       </div>
     );
 
-    const inPreGame = <PreGameDashboard socket={socket} owner={owner}/>;
+    const inPreGame = <PreGameDashboard socket={socket} isOwner={isOwner} room={room} />;
 
     const show = isInPreGame ? inPreGame : outOfGame;
 

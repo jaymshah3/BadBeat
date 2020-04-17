@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { any, bool } from 'prop-types';
+import { any, bool, number } from 'prop-types';
 import JoinRequest from './JoinRequest.js';
 import { Button, List, ListItem } from '@material-ui/core';
 
@@ -22,26 +22,25 @@ class PreGameDashboard extends Component {
 			this.setState((state) => {
 				const joinRequests = state.joinRequests.concat(data)
 				return {
-				joinRequests
+					joinRequests
 				}
 			});
 		});
 		socket.on('user has joined', (data) => {
 			this.setState((state) => {
-				const joinedPlayers = state.joinedPlayers.concat(data)
+				const joinedPlayers = state.joinedPlayers.concat(data);
 				return {
-				joinedPlayers
+					joinedPlayers
 				}
 			});
-		})
+		});
 	}
 
 	showStartButton() {
-		const { owner } = this.props;
+		const { isOwner } = this.props;
 		const { joinedPlayers } = this.state;
-		console.log(owner);
 
-		if (owner && joinedPlayers.length >= 2) {
+		if (isOwner && joinedPlayers.length >= 2) {
 			return <Button variant="contained" onClick={() => this.startGame()}>Start Game</Button>;
 		} else {
 			return null;
@@ -66,19 +65,19 @@ class PreGameDashboard extends Component {
 	}
 
 	showRequests() {
-		const { socket, owner } = this.props;
+		const { socket, isOwner } = this.props;
 		const { joinRequests } = this.state;
 
-		if (owner) {
+		if (isOwner) {
 			return <List>
-					{
-						joinRequests.map((element) => {
-							return <ListItem key={element['username']}>
-								<JoinRequest socket={socket} username={element['username']} bank={element['bank']} />
-							</ListItem>
-						})
-					}
-      	</List>
+				{
+					joinRequests.map((element) => {
+						return <ListItem key={element['username']}>
+							<JoinRequest socket={socket} room={room} username={element['username']} bank={element['bank']} />
+						</ListItem>
+					})
+				}
+     		</List>
 		} else {
 			return null;
 		}
@@ -97,7 +96,8 @@ class PreGameDashboard extends Component {
 
 PreGameDashboard.propTypes = {
 	socket: any,
-	owner: bool
+	isOwner: bool,
+	room: number
 }
 
 export default PreGameDashboard;
