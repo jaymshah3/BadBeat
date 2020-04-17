@@ -16,7 +16,6 @@ class GameState(Enum):
     RIVER = 4
     WINNER = 5
 
-
 players = []
 pot = 0
 current_round_pot = 0
@@ -28,97 +27,7 @@ initiator = None
 player_round = None
 current_player = None
 game_state = GameState.PREFLOP
-    # one round
-   '''  def run_round(self, start_index):
-        player_round = Round(self.players, start_index)
-        winner = []
 
-        self.run_betting_loop(player_round)
-        for player in player_round.get_current_players():
-            player.withdraw_bank()
-            player.current_contribution = 0
-        if player_round.length == 1:
-            winner.append(player_round.get_current_players())
-            print("Winner: " + winner[0].name)
-            assign_winnings(winner)
-            return
-        self.pot += self.current_round_pot
-        self.current_round_pot = 0
-        
-        self.cards = [
-            self.deck.get_top_card(),
-            self.deck.get_top_card(),
-            self.deck.get_top_card()
-        ]
-        print("CARDS")
-        for c in self.cards:
-            print(c)
-
-        # self.run_betting_loop(player_round)
-        for player in player_round.get_current_players():
-            player.withdraw_bank()
-            player.current_contribution = 0
-        if player_round.length == 1:
-            winner.append(player_round.get_current_players())
-            print("Winner: " + winner[0].name)
-            assign_winnings(winner)
-            return
-        self.pot += self.current_round_pot
-        self.current_round_pot = 0
-
-        print("CARDS")
-        self.cards.append(self.deck.get_top_card())
-        for c in self.cards:
-            print(c)
-
-        # self.run_betting_loop(player_round)
-        for player in player_round.get_current_players():
-            player.withdraw_bank()
-            player.current_contribution = 0
-        if player_round.length == 1:
-            winner.append(player_round.get_current_players())
-            print("Winner: " + winner[0].name)
-            self.assign_winnings(winner)
-            return
-        self.pot += self.current_round_pot
-        self.current_round_pot = 0
-        
-        print("CARDS")
-        self.cards.append(self.deck.get_top_card())
-        for c in self.cards:
-            print(c)
-
-        # self.run_betting_loop(player_round)
-        for player in self.players:
-            player.withdraw_bank()
-            player.current_contribution = 0
-        self.pot += self.current_round_pot
-        self.current_round_pot = 0
-
-        print()
-        winner = self.find_winners(player_round.get_current_players(), self.cards)
-        self.assign_winnings(winner)
- 
-
-     
-   
-   
-    def assign_winnings(self, winner):
-        if len(winner) == 1:
-            winner[0].bank += self.pot
-        else:
-            per_player_winnings = self.pot/len(winner)
-            for player in winner:
-                player.bank +=per_player_winnings
-        self.pot = 0
-
-
-     
-
-
-
-    
- '''
 @socketio.on('fold')
 def handle_fold(data):
     global current_player
@@ -133,7 +42,7 @@ def handle_fold(data):
     if initiator.name == current_player.name:
         if game_state.value != 5:
             game_state = (game_state.value+1)
-            run_next_game_state(game_state)
+        run_next_game_state(game_state)
         # reached end of round, change our game state
     else:
         get_options()
@@ -155,13 +64,11 @@ def handle_call(data):
     if initiator.name == current_player.name:
         if game_state.value != 5:
             game_state = (game_state.value+1)
-            run_next_game_state(game_state)
+        run_next_game_state(game_state)
             # reached end of round, change our game state
     else:
         get_options()
         
-
-
 @socketio.on('raise')
 def handle_raise(data):
     global current_player
@@ -197,14 +104,15 @@ def run_next_game_state(next_game_state):
     current_round_pot = 0
     if player_round.length == 1:
         find_winners()
-    if next_game_state.value == 2:
-        flop()
-    elif next_game_state.value ==3:
-        turn()
-    elif next_game_state.value == 4:
-        river()
     else:
-        find_winners()
+        if next_game_state.value == 2:
+            flop()
+        elif next_game_state.value ==3:
+            turn()
+        elif next_game_state.value == 4:
+            river()
+        else:
+            find_winners()
 
 def flop():
     global community_cards
@@ -279,7 +187,6 @@ def find_winners():
     emit('winners', {'winners': outp}, broadcast=True)
     assign_winnings(outp)
 
-
 def assign_winnings(winner):
     global pot
     if len(winner) == 1:
@@ -292,8 +199,7 @@ def assign_winnings(winner):
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand',{'hand': str(best_hands)},room=clients[player.name])
-
+    emit('current hand',{'hand': str(best_hand)},room=clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
@@ -340,22 +246,10 @@ def preflop(given_players,given_clients):
     initiator = current_player
     deal_cards()
     get_options()
-    
-    while len(driver.players) > 1:
-        driver.deal_cards()
-        print()
-        driver.run_round(start_player)
-        for p in driver.players:
-            # ask if still play
-            stay = None
-            if not stay:
-                driver.players.remove(p)
-        start_player += 1
-        start_player = start_player % len(driver.players)
-
 
 def broadcast_pot(amount):
     emit('pot update', {'pot': amount}, broadcast=True)
+
 def broadcast_community_cards():
     global community_cards
     emit('community cards', {community_cards}, broadcast=True)
