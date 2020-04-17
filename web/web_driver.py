@@ -98,63 +98,7 @@ game_state = GameState.PREFLOP
         print()
         winner = self.find_winners(player_round.get_current_players(), self.cards)
         self.assign_winnings(winner)
-    
-    def run_betting_loop(self, player_round):
-        self.initiator = player_round.start_node
-        curr_player_obj = player_round.get_next_player()
-
-        while curr_player_obj != self.initiator:
-            curr_player = curr_player_obj.player
-            options = self.get_options(curr_player)
-
-            # **** get action for next_player ****
-            # will fill out below vars
-
-            player_selection = None
-            amount = None
-            if player_selection == "raise":
-                curr_player.bet(amount)
-                self.initiator = curr_player_obj
-                self.highest_current_contribution = amount + curr_player.current_contribution
-            elif player_selection == "call":
-                curr_player.bet(amount)
-            elif player_selection == "fold":
-                player_round.remove_current()
-            self.current_round_pot += curr_player.current_contribution
-            curr_player_obj = player_round.get_next_player()
-
-        self.highest_current_contribution = 0
-
-
-
-    def find_winners(self, players, middle_cards):
-        best_hands = [self.get_player_winning_hand(x.cards, middle_cards) for x in players]
-        winning_players = [players[0]]
-        winning_hands = [best_hands[0]]
-        print(str(players[0]) + " has a " + str(best_hands[0]))
-
-        for i in range(1, len(best_hands)):
-            print(str(players[i]) + " has a " + str(best_hands[i]))
-            if best_hands[i] < winning_hands[0]:
-                continue
-            elif best_hands[i] > winning_hands[0]:
-                winning_hands = [best_hands[i]]
-                winning_players = [players[i]]
-            else:
-                winning_hands.append(best_hands[i])
-                winning_players.append(players[i])
-
-        outp = ""
-        for w in winning_players:
-            outp += str(w) + " "
-        print("Winners are: " + outp)
-        return winning_players
-
-    def get_player_winning_hand(self, player_cards, middle_cards):
-        all_cards = player_cards[:]
-        all_cards.extend(middle_cards)
-        all_hands = sorted([Hand.create_hand(x) for x in itertools.combinations(all_cards, 5)], reverse=True)
-        return all_hands[0]
+ 
 
      
    
@@ -168,34 +112,10 @@ game_state = GameState.PREFLOP
                 player.bank +=per_player_winnings
         self.pot = 0
 
-    def preflop(self):
-        # emit to appropriate client they are BB and take BB form clients bank
-        # emit to appropriate client they are SB and taek SB from clients bank
-        self.deal_cards()
-        self.player_round = Round(self.players, 0)
-        winner = [] 
-        self.current_player = self.player_round.get_next_player()
-        self.initiator = self.current_player
-        self.get_options()
-        pass
+
      
 
-    @socketio.on('fold')
-    def handle_fold(data):
-        if data['username'] is not self.current_player.name:
-            #error
-            pass
-        self.curr_player = self.player_round.get_next_player()
-        if self.initiator == self.current_player:
-            self.game_state+
 
-    @socketio.on('call')
-    def handle_call(data):
-        pass
-
-    @socketio.on('raise')
-    def handle_raise(data):
-        pass
 
     
  '''
@@ -213,6 +133,7 @@ def handle_fold(data):
     if initiator.name == current_player.name:
         if game_state.value != 5:
             game_state = (game_state.value+1)
+            run_next_game_state(game_state)
         # reached end of round, change our game state
     else:
         get_options()
@@ -234,6 +155,7 @@ def handle_call(data):
     if initiator.name == current_player.name:
         if game_state.value != 5:
             game_state = (game_state.value+1)
+            run_next_game_state(game_state)
             # reached end of round, change our game state
     else:
         get_options()
@@ -273,6 +195,8 @@ def run_next_game_state(next_game_state):
     pot += current_round_pot
     broadcast_pot(pot)
     current_round_pot = 0
+    if player_round.length == 1:
+        find_winners()
     if next_game_state.value == 2:
         flop()
     elif next_game_state.value ==3:
@@ -294,6 +218,7 @@ def flop():
             deck.get_top_card()
         ]
     broadcast_community_cards()
+     # current_hand_strength(player,community_card)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
@@ -306,6 +231,7 @@ def turn():
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
+     # current_hand_strength(player,community_card)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
@@ -317,6 +243,7 @@ def river():
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
+    # current_hand_strength(player,community_card)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
