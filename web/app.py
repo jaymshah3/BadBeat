@@ -58,8 +58,11 @@ def handle_join_request(data):
          room=data['room'])
         change_active_clients(True)
         memory.add_player(data['username'],active_clients,data['bank'])
-    else:
-        emit('reject request', {'message': "Request to Join Rejected"}, room=clients[data['username']])
+    emit('request response', {data}, room=clients[data['username']])
+
+@socketio.on('list users')
+def list_users(data):
+    emit('user list', {memory.get_players()},room=data['room'])
 
 @socketio.on('leave')
 def on_leave(data):
