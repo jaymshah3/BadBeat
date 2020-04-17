@@ -1,19 +1,19 @@
 import React, { Component } from 'react';
 import { any, bool, number } from 'prop-types';
-import JoinRequest from './JoinRequest.js';
-import { Button, List, ListItem } from '@material-ui/core';
+import { Button, List, ListItem, Divider } from '@material-ui/core';
 
 class PreGameDashboard extends Component {
   constructor(props) {
 		super(props);
 		this.state = {
-			joinRequests: [{username: 'jay', bank: 1000}],
+			joinRequests: [],
 			joinedPlayers: [{username: 'sri', bank: 2000}]
 		};
 	}
 
 	componentDidMount() {
 		this.defineHandlers();
+		this.loadPlayers();
 	}
 
 	defineHandlers() {
@@ -26,7 +26,7 @@ class PreGameDashboard extends Component {
 				}
 			});
 		});
-		socket.on('user has joined', (data) => {
+		socket.on('user joined', (data) => {
 			this.setState((state) => {
 				const joinedPlayers = state.joinedPlayers.concat(data);
 				return {
@@ -34,6 +34,31 @@ class PreGameDashboard extends Component {
 				}
 			});
 		});
+		socket.on('user list', (data) => {
+			this.setState({joinedPlayers: data["players"]});
+		});
+	}
+
+	loadPlayers() {
+		const { socket } = this.props;
+		socket.emit('list users');
+	}
+
+	handleRequest = (element, decision) => {
+		const { socket, room } = this.props;
+		const data = {
+			username: element['username'],
+			bank: element['bank'],
+			approve: decision,
+			room: room
+		}
+		this.setState(state => {
+			const joinRequests = state.joinRequests.filter(x => x['username'] != element['username']);
+			return {
+				joinRequests
+			}
+		});
+		socket.emit('handle join request', data);
 	}
 
 	showStartButton() {
@@ -65,7 +90,7 @@ class PreGameDashboard extends Component {
 	}
 
 	showRequests() {
-		const { socket, isOwner } = this.props;
+		const { isOwner } = this.props;
 		const { joinRequests } = this.state;
 
 		if (isOwner) {
@@ -73,7 +98,12 @@ class PreGameDashboard extends Component {
 				{
 					joinRequests.map((element) => {
 						return <ListItem key={element['username']}>
-							<JoinRequest socket={socket} room={room} username={element['username']} bank={element['bank']} />
+							<div>
+								<p>{element['username']}</p>
+								<p>{element['bank']}</p>
+								<Button variant="contained" color="primary" onClick={() => {this.handleRequest(element, true)}}>Approve</Button>
+								<Button variant="contained" color="secondary" onClick={() =>{this.handleRequest(element, false)}}>Reject</Button>
+							</div>
 						</ListItem>
 					})
 				}
@@ -88,6 +118,7 @@ class PreGameDashboard extends Component {
 			<div>
 				{this.showStartButton()}
 				{this.showRequests()}
+				<Divider />
 				{this.showJoinedPlayers()}
 			</div>
 		)

@@ -14,7 +14,8 @@ class App extends Component {
       isInPreGame: false,
       requested: false,
       isOwner: false,
-      room: -1
+      room: -1,
+      usernameError: false
     };
   }
 
@@ -28,35 +29,64 @@ class App extends Component {
   }
 
   defineHandlers(socket) {
-    socket.on('reject request', () => {
-      this.setState({requested: false});
-    });
-
-    socket.on('approve request', () => {
-      this.setState({requested: false, isInPreGame: true});
+    socket.on('request response', (data) => {
+      if (data['approve']) {
+        this.setState({requested: false, isInPreGame: true, usernameError: false});
+      } else {
+        this.setState({requested: false});
+      }
     });
 
     socket.on('owner', () => {
       console.log('got owner')
-      this.setState({requested: false, isInPreGame: true, isOwner: true});
+      this.setState({requested: false, isInPreGame: true, isOwner: true, usernameError: false});
+    });
+
+    socket.on('duplicate username', () => {
+      this.setState({requested: false, usernameError: true})
     });
   }
 
   render() {
-    const { username, isInPreGame, socket, isOwner, room } = this.state;
+    const { username, usernameError, isInPreGame, socket, isOwner, room, requested } = this.state;
     const isDisabled = username == "" || username == undefined;
-    console.log('isInPreGame is ' + isInPreGame)
 
     const outOfGame = (
       <div>
-        <TextField value={this.state.username} onChange={this.handleUsernameChange} id="outlined-basic" label="Username" variant="outlined" />
+        <TextField 
+          value={this.state.username} 
+          onChange={this.handleUsernameChange} 
+          id="outlined-basic" 
+          label="Username" 
+          variant="outlined" 
+          error={usernameError}
+          helperText={usernameError ? "Username already exists." : ""}
+        />
+        <TextField 
+          value={this.state.bank} 
+          onChange={this.handleBankChange} 
+          id="outlined-basic" 
+          label="Bank" 
+          variant="outlined" 
+          // error={}
+          // helperText={usernameError ? "Username already exists." : ""}
+        />
         <Button variant="contained" type="submit" disabled={isDisabled} onClick={() => this.joinGame()}>Join Game</Button>
       </div>
     );
 
+    const requestedView = <h1>Requested...</h1>
+
     const inPreGame = <PreGameDashboard socket={socket} isOwner={isOwner} room={room} />;
 
-    const show = isInPreGame ? inPreGame : outOfGame;
+    let show;
+    if (requested) {
+      show = requestedView;
+    } else if (isInPreGame) {
+      show = inPreGame;
+    } else {
+      show = outOfGame;
+    }
 
     return (
       <div className="App">
@@ -71,14 +101,20 @@ class App extends Component {
     });
   }
 
+  handleBankChange = (e) => {
+    this.setState({
+      bank: parseInt(e.target.value)
+    });
+  }
+
   joinGame() {
-    const { socket, username } = this.state;
+    const { socket, username, bank } = this.state;
 
     this.setState({requested: true});
     socket.emit('request to join', {
       username: username,
       room: 1,
-      bank: 1000
+      bank: bank
     })
   }
 }
