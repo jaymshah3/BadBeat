@@ -187,7 +187,7 @@ def run_next_game_state(next_game_state):
     global pot
     global current_round_pot
     global player_round
-    for player in player_round.get_current_players():
+    for player in players: # even if the client has folded, the clients current contribution needs to be subtracted
         player.withdraw_bank()
         emit('withdraw bank', {'amount': player.current_contribution}, room=clients[player.name])
         player.current_contribution = 0
@@ -218,7 +218,8 @@ def flop():
             deck.get_top_card()
         ]
     broadcast_community_cards()
-     # current_hand_strength(player,community_card)
+    for player in player_round.get_current_players():
+        current_hand_strength(player,community_cards)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
@@ -231,10 +232,12 @@ def turn():
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
-     # current_hand_strength(player,community_card)
+    for player in player_round.get_current_players():
+        current_hand_strength(player,community_cards)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
+
 def river():
     global community_cards
     global deck
@@ -243,7 +246,8 @@ def river():
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
-    # current_hand_strength(player,community_card)
+    for player in player_round.get_current_players():
+        current_hand_strength(player,community_cards)
     initiator = player_round.start_node.player
     current_player = player_round.get_next_player().player
     get_options()
@@ -254,11 +258,11 @@ def find_winners():
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', {'best hand': str(best_hands[0])},room=clients[players[0]])
+    emit('best hand', {'best hand': str(best_hands[0])},room=clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', {'best hand': str(best_hands[i])},room=clients[players[i]])
+        emit('best hand', {'best hand': str(best_hands[i])},room=clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -273,7 +277,24 @@ def find_winners():
         outp += str(w) + " "
     print("Winners are: " + outp)
     emit('winners', {'winners': outp}, broadcast=True)
-    return winning_players
+    assign_winnings(outp)
+
+
+def assign_winnings(winner):
+    global pot
+    if len(winner) == 1:
+        winner[0].bank += pot
+    else:
+        per_player_winnings = pot/len(winner)
+        for player in winner:
+            player.bank +=per_player_winnings
+    pot = 0
+
+def current_hand_strength(player, community_cards):
+    best_hand = get_player_winning_hand(player.cards,community_cards)
+    emit('current hand',{'hand': str(best_hands)},room=clients[player.name])
+
+
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
     all_cards.extend(middle_cards)
