@@ -43,11 +43,11 @@ def request_to_join(data):
     if active_clients == 0:
         room_owner = request.sid
         emit('owner', {'message': "you are owner"}, room=room_owner)
-        change_active_clients(True)
+        change_active_clients(1)
     if request.sid == room_owner:
         memory.add_player(data['username'],active_clients,data['bank'])
-        return
-    emit('join request', data, room =room_owner)
+    else:
+        emit('join request', data, room =room_owner)
 
 @socketio.on('handle join request')
 def handle_join_request(data):
@@ -56,13 +56,13 @@ def handle_join_request(data):
     if data['approve']:
         emit("user joined", data,
          room=data['room'])
-        change_active_clients(True)
+        change_active_clients(1)
         memory.add_player(data['username'],active_clients,data['bank'])
     emit('request response', {data}, room=clients[data['username']])
 
 @socketio.on('list users')
 def list_users(data):
-    emit('user list', {memory.get_players()},room=data['room'])
+    emit('user list', {'players': memory.get_players()},room=data['room'])
 
 @socketio.on('leave')
 def on_leave(data):
@@ -70,7 +70,7 @@ def on_leave(data):
     username = data['username']
     room = data['room']
     del clients[username]
-    change_active_clients(False)
+    change_active_clients(-1)
     leave_room(room)
     send(username + ' has left the room.', room=room)
 
@@ -87,10 +87,7 @@ def on_start(data):
 def change_active_clients(increment):
     global active_clients
     lock.acquire()
-    if increment:
-        active_clients+=1
-    else:
-        active_clients-=1
+    active_clients+=increment
     lock.release()
 
 from web_driver import preflop
