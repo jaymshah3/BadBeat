@@ -81,7 +81,7 @@ def on_start(data):
     room = data['room']
     has_game_started = True
     emit('server_start', {'message': "Game has started"}, room=room)
-    preflop(memory.get_players,clients)
+    preflop(memory.get_players,clients,data['small_blind'],data['big_blind'])
     
 
 def change_active_clients(increment):

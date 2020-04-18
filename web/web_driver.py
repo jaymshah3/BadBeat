@@ -24,8 +24,9 @@ deck = Deck()
 highest_current_contribution = 0
 clients = {}
 community_cards = []
-initiator = None
 player_round = None
+small_blind_amount = 0
+big_blind_amount = 0
 current_player = None
 game_state = GameState.PREFLOP
 
@@ -40,13 +41,7 @@ def handle_fold(data):
     player_round.remove_current()
     emit('player folded', {data}, broadcast=True)
     current_player = player_round.get_next_player().player
-    if initiator == current_player:
-        if game_state.value != GameState.WINNER:
-            game_state = GameState(game_state.value+1)
-        run_next_game_state(game_state)
-        # reached end of round, change our game state
-    else:
-        get_options()
+    get_options()
 
 @socketio.on('call')
 def handle_call(data):
@@ -64,13 +59,7 @@ def handle_call(data):
     broadcast_pot(current_round_pot)
     emit('player called', {data}, broadcast=True)
     current_player = player_round.get_next_player().player
-    if initiator == current_player:
-        if game_state.value != GameState.WINNER:
-            game_state = GameState(game_state.value+1)
-        run_next_game_state(game_state)
-            # reached end of round, change our game state
-    else:
-        get_options()
+    get_options()
         
 @socketio.on('raise')
 def handle_raise(data):
@@ -78,7 +67,6 @@ def handle_raise(data):
     global player_round
     global game_state
     global current_round_pot
-    global initiator
     global highest_current_contribution
     if data['username'] is not current_player.name:
         pass
@@ -90,7 +78,6 @@ def handle_raise(data):
     current_round_pot += current_player.current_contribution
     broadcast_pot(current_round_pot)
     emit('player raised', {data}, broadcast=True)
-    initiator = current_player
     current_player = player_round.get_next_player().player
     get_options()
 
@@ -100,7 +87,7 @@ def run_next_game_state(next_game_state):
     global current_round_pot
     global player_round
     for player in players:
-        player.current_contribution = 0
+        player.current_contribution = None
     highest_current_contribution = 0
     pot += current_round_pot
     broadcast_pot(pot)
@@ -117,25 +104,30 @@ def run_next_game_state(next_game_state):
         else:
             find_winners()
 
-def preflop(given_players,given_clients):
+def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     global players
     global clients
     global player_round
     global current_player
-    global initiator
+    global small_blind_amount
+    global big_blind_amount
+    global highest_current_contribution
     players = given_players
     clients = given_clients
-    start_player = 0
-    player_round = Round(players,start_player)
-    current_player = player_round.get_next_player().start_node
-    initiator = current_player
+    small_blind = 0
+    player_round = Round(players,small_blind)
+    small_blind_amount = small_blind_amt
+    big_blind_amount = big_blind_amt
+    highest_current_contribution = big_blind_amount
+    player_round.small_blind.player.bet(small_blind_amount)
+    player_round.big_blind.player.bet(big_blind_amount)
+    current_player = player_round.current_node.player
     deal_cards()
     get_options()
 
 def flop():
     global community_cards
     global deck
-    global initiator
     global player_round
     global current_player
     community_cards = [
@@ -146,36 +138,40 @@ def flop():
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    initiator = player_round.start_node.player
-    current_player = player_round.get_next_player().player
+    current_player_node= player_round.small_blind
+    while current_player_node.isFold:
+        current_player_node = current_player.next_node
+    current_player = current_player_node.player
     get_options()
 
 def turn():
     global community_cards
     global deck
-    global initiator
     global player_round
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    initiator = player_round.start_node.player
-    current_player = player_round.get_next_player().player
+    current_player_node= player_round.small_blind
+    while current_player_node.isFold:
+        current_player_node = current_player.next_node
+    current_player = current_player_node.player
     get_options()
 
 def river():
     global community_cards
     global deck
-    global initiator
     global player_round
     global current_player
     community_cards.append(deck.get_top_card())
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    initiator = player_round.start_node.player
-    current_player = player_round.get_next_player().player
+    current_player_node= player_round.small_blind
+    while current_player_node.isFold:
+        current_player_node = current_player.next_node
+    current_player = current_player_node.player
     get_options()
 
 def find_winners():
@@ -239,20 +235,31 @@ def get_options():
     global current_player
     global clients
     global player_round
+    global highest_current_contribution
+    global game_state
     if player_round.length == 1:
         find_winners()
     else:
-        options = []
-        options.append("fold")
-        if (highest_current_contribution == 0 or 
-        current_player.current_contribution < highest_current_contribution):
-            options.append("raise")
-        if current_player.current_contribution < highest_current_contribution:
-            options.append("call")
-        if highest_current_contribution == 0:
-            options.append("check")
-        
-        emit('options for player', {'options': options}, room=clients[current_player.name])
+        if ((current_player.current_contribution is not None) 
+        and (current_player.current_contribution == highest_current_contribution) 
+        and not (player_round.big_blind.player == current_player and 
+        game_state == GameState.PREFLOP)):
+            if game_state.value != GameState.WINNER:
+                game_state = GameState(game_state.value+1)
+            run_next_game_state(game_state)
+        else:
+            options = []
+            options.append("fold")
+            if (current_player.current_contribution is None 
+            or highest_current_contribution == 0 or 
+            current_player.current_contribution < highest_current_contribution):
+                options.append("raise")
+            if current_player.current_contribution is None or current_player.current_contribution < highest_current_contribution:
+                options.append("call")
+            if highest_current_contribution == 0:
+                options.append("check")
+            
+            emit('options for player', {'options': options}, room=clients[current_player.name])
 
 def deal_cards():
     global deck

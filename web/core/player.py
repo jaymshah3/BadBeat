@@ -4,7 +4,7 @@ class Player():
         self.name = name
         self.bank = bank
         self.id_num = id_num
-        self.current_contribution = 0
+        self.current_contribution = None
         self.cards = None
 
     def set_cards(self, cards):
@@ -18,6 +18,8 @@ class Player():
     def bet(self,amount):
         if amount + self.current_contribution > self.bank:
             raise ValueError("Insufficient Funds")
+        if self.current_contribution is None:
+            self.current_contribution = 0
         self.current_contribution += amount
     
     def withdraw_bank(self):
