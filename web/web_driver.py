@@ -53,8 +53,6 @@ def handle_call(data):
         pass
         #error
     current_player.bet(data['amount'])
-    current_player.withdraw()
-    emit('withdraw bank', {'amount': current_player.current_contribution}, room=clients[current_player.name])
     current_round_pot += current_player.current_contribution
     broadcast_pot(current_round_pot)
     emit('player called', {data}, broadcast=True)
@@ -72,11 +70,11 @@ def handle_raise(data):
         pass
         #error
     current_player.bet(data['amount'])
-    current_player.withdraw()
-    emit('withdraw bank', {'amount': current_player.current_contribution}, room=clients[current_player.name])
-    highest_current_contribution = data['amount'] + current_player.current_contribution
+    highest_current_contribution = current_player.current_contribution 
+    # we already added data['amount'] to current_player.current_contribution
     current_round_pot += current_player.current_contribution
     broadcast_pot(current_round_pot)
+    emit('highest_contribution', {'amount': highest_current_contribution})
     emit('player raised', {data}, broadcast=True)
     current_player = player_round.get_next_player().player
     get_options()
@@ -86,7 +84,11 @@ def run_next_game_state(next_game_state):
     global pot
     global current_round_pot
     global player_round
+    global clients
     for player in players:
+        player.withdraw()
+        emit('withdraw', {'amount': player.current_contribution},
+        room=clients[player.name])
         player.current_contribution = None
     highest_current_contribution = 0
     pot += current_round_pot
@@ -121,9 +123,11 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     highest_current_contribution = big_blind_amount
     player_round.small_blind.player.bet(small_blind_amount)
     player_round.big_blind.player.bet(big_blind_amount)
+    player_round.small_blind.player.withdraw()
+    player_round.big_blind.player.withdraw()
     current_player = player_round.current_node.player
     deal_cards()
-    get_options()
+    get_options() 
 
 def flop():
     global community_cards
@@ -259,7 +263,9 @@ def get_options():
             if highest_current_contribution == 0:
                 options.append("check")
             
-            emit('options for player', {'options': options}, room=clients[current_player.name])
+            emit('options for player', {'options': options, 
+            'highest_contribution': highest_current_contribution},
+             room=clients[current_player.name])
 
 def deal_cards():
     global deck

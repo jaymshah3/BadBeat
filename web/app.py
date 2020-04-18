@@ -15,15 +15,6 @@ active_clients = 0
 room_owner = -1
 has_game_started = False
 lock = Lock()
-
-
-@socketio.on('connect')
-def handle_connect():
-    print('connected')
-
-def ack():
-    print('message was received!')
-
     
 @socketio.on('request to join')
 def request_to_join(data):
