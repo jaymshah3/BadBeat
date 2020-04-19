@@ -239,7 +239,7 @@ def distribute():
                 per_player_winnings = int(per_player_winnings)
                 extra_chip_winner = [p for p in aggressors.reverse() if not p.isFold]
                 for p in winners:
-                    if p == extra_chip_winner:
+                    if p == extra_chip_winner[0]:
                         p.result +=1
                     p.result += per_player_winnings
 
