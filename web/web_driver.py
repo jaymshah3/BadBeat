@@ -29,17 +29,24 @@ small_blind_amount = 0
 big_blind_amount = 0
 current_player = None
 game_state = GameState.PREFLOP
+prev_high_rase = 0
+aggressors = []
+
 
 @socketio.on('fold')
 def handle_fold(data):
     global current_player
     global player_round
     global game_state
+    global aggressors
     if data['username'] is not current_player.name:
         pass
         #error
-    player_round.remove_current()
     emit('player folded', {data}, broadcast=True)
+    player_round.remove_current()
+    if current_player == aggressors[-1]:
+        if not len(aggressors) == 1:
+            aggressors.pop()
     current_player = player_round.get_next_player().player
     get_options()
 
@@ -66,9 +73,13 @@ def handle_raise(data):
     global game_state
     global current_round_pot
     global highest_current_contribution
+    global prev_high_raise
+    global aggressors
     if data['username'] is not current_player.name:
         pass
         #error
+    aggressors.append(current_player)
+    prev_high_raise = highest_current_contribution
     current_player.bet(data['amount'])
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
@@ -86,7 +97,6 @@ def run_next_game_state(next_game_state):
     global player_round
     global clients
     for player in players:
-        player.withdraw()
         emit('withdraw', {'amount': player.current_contribution},
         room=clients[player.name])
         player.current_contribution = None
@@ -95,16 +105,16 @@ def run_next_game_state(next_game_state):
     broadcast_pot(pot)
     current_round_pot = 0
     if player_round.length == 1:
-        find_winners()
+        distribute()
     else:
         if next_game_state == GameState.FLOP:
             flop()
-        elif next_game_state.value ==GameState.TURN:
+        elif next_game_state ==GameState.TURN:
             turn()
-        elif next_game_state.value == GameState.RIVER:
+        elif next_game_state == GameState.RIVER:
             river()
         else:
-            find_winners()
+            distribute()
 
 def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     global players
@@ -123,9 +133,8 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     highest_current_contribution = big_blind_amount
     player_round.small_blind.player.bet(small_blind_amount)
     player_round.big_blind.player.bet(big_blind_amount)
-    player_round.small_blind.player.withdraw()
-    player_round.big_blind.player.withdraw()
     current_player = player_round.current_node.player
+    aggressors.append(player_round.big_blind.player)
     deal_cards()
     get_options() 
 
@@ -178,8 +187,9 @@ def river():
     current_player = current_player_node.player
     get_options()
 
-def find_winners():
-    players = player_round.get_current_players()
+def find_winners(all_players):
+    global community_cards
+    players = all_players
     middle_cards = community_cards
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
@@ -198,32 +208,53 @@ def find_winners():
             winning_hands.append(best_hands[i])
             winning_players.append(players[i])
 
-    outp = ""
-    for w in winning_players:
-        outp += str(w) + " "
-    print("Winners are: " + outp)
-    emit('winners', {'winners': outp}, broadcast=True)
-    assign_winnings(outp)
+    return winning_players
     # call next_game() ? next_game() can then reset all global vars, 
     # exclude players who indicated to "stand up", and call preflop()
     # with remaning players? Lets sync and discuss.
-def assign_winnings(winner):
-    global pot
-    if len(winner) == 1:
-        winner[0].bank += pot
-    else:
-        per_player_winnings = pot/len(winner)
-        if per_player_winnings.is_integer():
-            for player in winner:
-                 player.bank += per_player_winnings
+
+def distribute():
+    global players
+    distrubute_players = players
+    calc_pot = 0
+    for p in distrubute_players:
+        p.result= -p.invested # invested money is lost originally
+
+    # while there are still players with money
+    # we build a side-pot matching the lowest stack and distribute money to winners
+    while len(distrubute_players)>1 :
+        min_stack = min([p.invested for p in distrubute_players])
+        calc_pot += min_stack * len(distrubute_players)
+        for p in distrubute_players:
+            p.invested -= min_stack
+        winners = find_winners(p for p in distrubute_players if not p.isFold)
+        if len(winners) == 1:
+            winners[0].result += calc_pot
         else:
-            per_player_winnings = int(per_player_winnings)
-            random_extra_chip = randint(0,len(winner))
-            for i in range(0,len(winner)):
-                if i == random_extra_chip:
-                    winner[i].bank +=1
-                winner[i].bank += per_player_winnings
-    pot = 0
+            per_player_winnings = pot/len(winners)
+            if per_player_winnings.is_integer():            
+                for p in winners:
+                    p.result += per_player_winnings
+            else:
+                per_player_winnings = int(per_player_winnings)
+                extra_chip_winner = [p for p in aggressors.reverse() if not p.isFold]
+                for p in winners:
+                    if p == extra_chip_winner:
+                        p.result +=1
+                    p.result += per_player_winnings
+
+        distrubute_players = [p for p in distrubute_players if p.invested > 0]
+        calc_pot = 0
+    if len(players) == 1:
+        p = distrubute_players[0]
+        # return uncalled bet
+        p.result += p.invested
+    apply_result_to_all()
+
+def apply_result_to_all():
+    global players
+    for p in players:
+        p.apply_result()
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
@@ -242,13 +273,13 @@ def get_options():
     global highest_current_contribution
     global game_state
     if player_round.length == 1:
-        find_winners()
+        distribute()
     else:
         if ((current_player.current_contribution is not None) 
         and (current_player.current_contribution == highest_current_contribution) 
         and not (player_round.big_blind.player == current_player and 
         game_state == GameState.PREFLOP)):
-            if game_state.value != GameState.WINNER:
+            if game_state != GameState.WINNER:
                 game_state = GameState(game_state.value+1)
             run_next_game_state(game_state)
         else:

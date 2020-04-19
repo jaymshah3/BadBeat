@@ -31,6 +31,7 @@ class Round():
             self.current_node = self.small_blind
     def remove_current(self):
         self.current_node.isFold = True
+        self.current_node.player.isFold = True
         self.length -= 1
        
     def get_next_player(self):
