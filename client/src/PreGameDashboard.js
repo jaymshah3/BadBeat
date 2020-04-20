@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
-import { any, bool, number } from 'prop-types';
-import { Button, List, ListItem, Divider } from '@material-ui/core';
+import { any, bool, number, string } from 'prop-types';
+import { Button, List, ListItem, Divider, ListItemText } from '@material-ui/core';
+import InGameDashboard from './InGameDashboard';
 
 class PreGameDashboard extends Component {
   constructor(props) {
 		super(props);
 		this.state = {
 			joinRequests: [],
-			joinedPlayers: []
+			joinedPlayers: [],
+			isInGame: false,
 		};
 	}
 
@@ -38,6 +40,10 @@ class PreGameDashboard extends Component {
 		});
 		socket.on('user list', (data) => {
 			this.setState({joinedPlayers: data["players"]});
+		});
+		socket.on('game start', () => {
+			console.log('got game start')
+			this.setState({isInGame: true});
 		});
 	}
 
@@ -82,8 +88,8 @@ class PreGameDashboard extends Component {
 				joinedPlayers.map((element) => {
 					return <ListItem key={element['username']}>
 						<div>
-							<p>{element['username']}</p>
-							<p>{element['bank']}</p>
+							<ListItemText>{element['username']}</ListItemText>
+							<ListItemText>{element['bank']}</ListItemText>
 						</div>
 					</ListItem>
 				})
@@ -101,8 +107,8 @@ class PreGameDashboard extends Component {
 					joinRequests.map((element) => {
 						return <ListItem key={element['username']}>
 							<div>
-								<p>{element['username']}</p>
-								<p>{element['bank']}</p>
+								<ListItemText>{element['username']}</ListItemText>
+								<ListItemText>{element['bank']}</ListItemText>
 								<Button variant="contained" color="primary" onClick={() => {this.handleRequest(element, true)}}>Approve</Button>
 								<Button variant="contained" color="secondary" onClick={() =>{this.handleRequest(element, false)}}>Reject</Button>
 							</div>
@@ -115,8 +121,17 @@ class PreGameDashboard extends Component {
 		}
 	}
 
+	startGame() {
+		const { socket, room, bank } = this.props;
+		socket.emit('start', {room: room, small_blind: 5, big_blind: 10});
+	}
+
 	render() {
-		return (
+		const { isInGame, joinedPlayers } = this.state;
+		const { username, bank } = this.props;
+		const { socket, room } = this.props;
+		console.log('isingame: ' + isInGame)
+		const preGame = (
 			<div>
 				{this.showStartButton()}
 				{this.showRequests()}
@@ -124,13 +139,26 @@ class PreGameDashboard extends Component {
 				{this.showJoinedPlayers()}
 			</div>
 		)
+		const inGame = <InGameDashboard 
+							socket={socket} 
+							room={room} 
+							players={joinedPlayers}
+							username={username}
+							bank={bank}
+						/>
+
+		const show = isInGame ? inGame : preGame;
+
+		return <div>{show}</div>
 	}
 }
 
 PreGameDashboard.propTypes = {
 	socket: any,
 	isOwner: bool,
-	room: number
+	room: number,
+	username: string,
+	bank: number
 }
 
 export default PreGameDashboard;

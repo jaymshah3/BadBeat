@@ -15,7 +15,7 @@ class App extends Component {
       isInPreGame: false,
       requested: false,
       isOwner: false,
-      room: -1,
+      room: 1,
       usernameError: false
     };
   }
@@ -49,7 +49,17 @@ class App extends Component {
   }
 
   render() {
-    const { username, usernameError, isInPreGame, socket, isOwner, room, requested } = this.state;
+    const { 
+      username, 
+      usernameError, 
+      isInPreGame, 
+      socket, 
+      isOwner, 
+      room, 
+      requested,
+      bank
+    } = this.state;
+
     const isDisabled = username == "" || username == undefined;
 
     const outOfGame = (
@@ -64,7 +74,7 @@ class App extends Component {
           helperText={usernameError ? "Username already exists." : ""}
         />
         <TextField 
-          value={this.state.bank} 
+          value={bank} 
           onChange={this.handleBankChange} 
           id="outlined-basic" 
           label="Bank" 
@@ -78,7 +88,13 @@ class App extends Component {
 
     const requestedView = <h1>Requested...</h1>
 
-    const inPreGame = <PreGameDashboard socket={socket} isOwner={isOwner} room={room} />;
+    const inPreGame = <PreGameDashboard 
+                        socket={socket} 
+                        isOwner={isOwner} 
+                        room={room} 
+                        username={username}
+                        bank={parseInt(bank)}
+                      />;
 
     let show;
     if (requested) {

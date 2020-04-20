@@ -71,12 +71,13 @@ def on_leave(data):
 
 @socketio.on('start')
 def on_start(data):
+    print('got start')
     global has_game_started
     global memory
     room = data['room']
     has_game_started = True
-    emit('server_start', {'message': "Game has started"}, room=room)
-    preflop(memory.get_players,clients,data['small_blind'],data['big_blind'])
+    emit('game start', {'message': "Game has started"}, room=room)
+    preflop(memory.get_players(), clients, data['small_blind'], data['big_blind'])
     
 
 def change_active_clients(increment):
