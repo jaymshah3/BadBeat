@@ -256,16 +256,23 @@ def get_options():
             options.append("fold")
             if (current_player.current_contribution is None 
             or highest_current_contribution == 0 or 
-            current_player.current_contribution < highest_current_contribution):
+            current_player.current_contribution < highest_current_contribution 
+            or (player_round.big_blind.player == current_player and 
+            game_state == GameState.PREFLOP)):
                 options.append("raise")
-            if current_player.current_contribution is None or current_player.current_contribution < highest_current_contribution:
+            if (current_player.current_contribution is None 
+            or current_player.current_contribution < highest_current_contribution):
                 options.append("call")
-            if highest_current_contribution == 0:
+            if (highest_current_contribution == 0 or 
+            player_round.big_blind.player == current_player and 
+            game_state == GameState.PREFLOP 
+            and current_player.current_contribution == highest_current_contribution):
                 options.append("check")
             
             emit('options for player', {'options': options, 
             'highest_contribution': highest_current_contribution},
              room=clients[current_player.name])
+
 
 def deal_cards():
     global deck
