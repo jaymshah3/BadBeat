@@ -82,8 +82,12 @@ def handle_raise(data):
     prev_high_raise = highest_current_contribution
     # on raise, the amount is the final amount the player wants to be "in" for,
     # not how much more they want to add to there contribution.
-    current_round_pot += data['amount']-current_player.current_contribution
-    current_player.bet(data['amount']-current_player.current_contribution)
+    if current_player.current_contribution is not None:
+        current_round_pot += data['amount']-current_player.current_contribution
+        current_player.bet(data['amount']-current_player.current_contribution)
+    else:
+        current_player.bet(data['amount'])
+        current_round_pot += data['amount']
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
     broadcast_pot(current_round_pot)
@@ -304,9 +308,9 @@ def get_options():
         else:
             options = []
             options.append("fold")
-            if (current_player.current_contribution is None 
-            or highest_current_contribution == 0 or 
-            current_player.current_contribution < highest_current_contribution):
+            if (current_player.current_contribution is None or 
+            current_player.current_contribution < highest_current_contribution and
+            highest_current_contribution != 0):
                 options.append("raise")
             if (current_player.current_contribution is None 
             or current_player.current_contribution < highest_current_contribution 
@@ -314,6 +318,7 @@ def get_options():
                 options.append("call")
             if highest_current_contribution == 0:
                 options.append("check")
+                options.append("bet")
             
             emit('options for player', {'options': options, 
             'highest_contribution': highest_current_contribution},
