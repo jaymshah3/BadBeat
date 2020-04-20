@@ -11,6 +11,7 @@ class App extends Component {
       socket: null,
       endpoint: 'http://localhost:5000',
       username: '',
+      bank: '',
       isInPreGame: false,
       requested: false,
       isOwner: false,

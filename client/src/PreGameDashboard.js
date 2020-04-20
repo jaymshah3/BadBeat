@@ -7,7 +7,7 @@ class PreGameDashboard extends Component {
 		super(props);
 		this.state = {
 			joinRequests: [],
-			joinedPlayers: [{username: 'sri', bank: 2000}]
+			joinedPlayers: []
 		};
 	}
 
@@ -27,6 +27,8 @@ class PreGameDashboard extends Component {
 			});
 		});
 		socket.on('user joined', (data) => {
+			console.log('user joined');
+			console.log(data);
 			this.setState((state) => {
 				const joinedPlayers = state.joinedPlayers.concat(data);
 				return {
@@ -41,7 +43,7 @@ class PreGameDashboard extends Component {
 
 	loadPlayers() {
 		const { socket } = this.props;
-		socket.emit('list users');
+		socket.emit('list users', {room: 1});
 	}
 
 	handleRequest = (element, decision) => {
