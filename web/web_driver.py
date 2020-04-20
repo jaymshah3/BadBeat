@@ -60,7 +60,7 @@ def handle_call(data):
         pass
         #error
     current_player.bet(data['amount'])
-    current_round_pot += current_player.current_contribution
+    current_round_pot += data['amount']
     broadcast_pot(current_round_pot)
     emit('player called', {data}, broadcast=True)
     current_player = player_round.get_next_player().player
@@ -80,10 +80,12 @@ def handle_raise(data):
         #error
     aggressors.append(current_player)
     prev_high_raise = highest_current_contribution
-    current_player.bet(data['amount'])
+    # on raise, the amount is the final amount the player wants to be "in" for,
+    # not how much more they want to add to there contribution.
+    current_round_pot += data['amount']-current_player.current_contribution
+    current_player.bet(data['amount']-current_player.current_contribution)
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
-    current_round_pot += current_player.current_contribution
     broadcast_pot(current_round_pot)
     emit('highest_contribution', {'amount': highest_current_contribution})
     emit('player raised', {data}, broadcast=True)
@@ -133,6 +135,8 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     highest_current_contribution = big_blind_amount
     player_round.small_blind.player.bet(small_blind_amount)
     player_round.big_blind.player.bet(big_blind_amount)
+    current_round_pot += player_round.small_blind.current_contribution
+    current_round_pot += player_round.big_blind.current_contribution
     current_player = player_round.current_node.player
     aggressors.append(player_round.big_blind.player)
     deal_cards()
@@ -215,40 +219,55 @@ def find_winners(all_players):
 
 def distribute():
     global players
-    distrubute_players = players
-    calc_pot = 0
-    for p in distrubute_players:
-        p.result= -p.invested # invested money is lost originally
-
-    # while there are still players with money
-    # we build a side-pot matching the lowest stack and distribute money to winners
-    while len(distrubute_players)>1 :
-        min_stack = min([p.invested for p in distrubute_players])
-        calc_pot += min_stack * len(distrubute_players)
-        for p in distrubute_players:
-            p.invested -= min_stack
-        winners = find_winners(p for p in distrubute_players if not p.isFold)
-        if len(winners) == 1:
-            winners[0].result += calc_pot
-        else:
-            per_player_winnings = pot/len(winners)
-            if per_player_winnings.is_integer():            
-                for p in winners:
-                    p.result += per_player_winnings
-            else:
-                per_player_winnings = int(per_player_winnings)
-                extra_chip_winner = [p for p in aggressors.reverse() if not p.isFold]
-                for p in winners:
-                    if p == extra_chip_winner[0]:
-                        p.result +=1
-                    p.result += per_player_winnings
-
-        distrubute_players = [p for p in distrubute_players if p.invested > 0]
+    global player_round
+    if player_round.length == 1:
+        assign_one_winner()
+    else:
+        distrubute_players = players
         calc_pot = 0
-    if len(players) == 1:
-        p = distrubute_players[0]
-        # return uncalled bet
-        p.result += p.invested
+        for p in distrubute_players:
+            p.result= -p.invested # invested money is lost originally
+
+        # while there are still players with money
+        # we build a side-pot matching the lowest stack and distribute money to winners
+        while len(distrubute_players)>1 :
+            min_stack = min([p.invested for p in distrubute_players])
+            calc_pot += min_stack * len(distrubute_players)
+            for p in distrubute_players:
+                p.invested -= min_stack
+            winners = find_winners(p for p in distrubute_players if not p.isFold)
+            if len(winners) == 1:
+                winners[0].result += calc_pot
+            else:
+                per_player_winnings = pot/len(winners)
+                if per_player_winnings.is_integer():            
+                    for p in winners:
+                        p.result += per_player_winnings
+                else:
+                    per_player_winnings = int(per_player_winnings)
+                    extra_chip_winner = [p for p in aggressors.reverse() if not p.isFold]
+                    for p in winners:
+                        if p == extra_chip_winner[0]:
+                            p.result +=1
+                        p.result += per_player_winnings
+
+            distrubute_players = [p for p in distrubute_players if p.invested > 0]
+            calc_pot = 0
+        if len(players) == 1:
+            p = distrubute_players[0]
+            # return uncalled bet
+            p.result += p.invested
+        apply_result_to_all()
+
+
+def assign_one_winner():
+    global players
+    global player_round
+    winner = player_round.get_next_player()
+    for p in players:
+        if p != winner:
+            p.result = -p.invested
+            winner.result += p.invested
     apply_result_to_all()
 
 def apply_result_to_all():
@@ -289,7 +308,9 @@ def get_options():
             or highest_current_contribution == 0 or 
             current_player.current_contribution < highest_current_contribution):
                 options.append("raise")
-            if current_player.current_contribution is None or current_player.current_contribution < highest_current_contribution:
+            if (current_player.current_contribution is None 
+            or current_player.current_contribution < highest_current_contribution 
+            and highest_current_contribution != 0):
                 options.append("call")
             if highest_current_contribution == 0:
                 options.append("check")
