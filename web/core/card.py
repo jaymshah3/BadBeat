@@ -39,3 +39,5 @@ class Card():
 
     def str_condensed(self):
         return str(self.value_to_str(condensed=True)) + str(self.suit_to_str(condensed=True))
+    def serialize(self):
+        return {"value": self.value_to_str(), "suit": self.suit_to_str()}

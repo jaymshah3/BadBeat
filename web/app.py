@@ -49,7 +49,7 @@ def handle_join_request(data):
         emit("user joined", data,
          room=data['room'])
         change_active_clients(1)
-        memory.add_player(data['username'],active_clients,data['bank'])
+        memory.add_player(data['username'],active_clients,int(data['bank']))
     emit('request response', data, room=clients[data['username']])
 
 @socketio.on('list users')
