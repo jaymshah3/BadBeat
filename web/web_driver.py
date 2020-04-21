@@ -390,4 +390,8 @@ def broadcast_pot(amount):
 
 def broadcast_community_cards():
     global community_cards
-    emit('community cards', {'community_cards': community_cards}, broadcast=True)
+    cards = []
+    for c in community_cards:
+         cards.append(c.serialize())
+    emit('community cards', {'community_cards': cards}, broadcast=True)
+
