@@ -119,8 +119,16 @@ class App extends Component {
   }
 
   handleBankChange = (e) => {
+    const entry = e.target.value;
+    let valueToDisplay;
+    if (entry == "") {
+      valueToDisplay = "";
+    } else {
+      valueToDisplay = parseInt(entry);
+    }
+
     this.setState({
-      bank: parseInt(e.target.value)
+      bank: valueToDisplay
     });
   }
 
