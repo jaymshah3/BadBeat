@@ -8,14 +8,20 @@ class InGameDashboard extends Component {
         super(props);
 
         const players = props['players'];
-        players.map(x => x['latestAction'] = 'check');
+        const newList = players.map(x => {
+            return {
+                username: x['username'], 
+                bank: x['bank'], 
+                latestAction: 'check',
+            }
+        });
         this.state = {
             starting: true,
             personalCards: [],
             communityCards: [],
             options: [],
             highestCurrentContribution: 0,
-            currentPlayers: players,
+            currentPlayers: newList,
             pot: 0,
             bank: props['bank'],
             showRaiseDialog: false
@@ -51,9 +57,13 @@ class InGameDashboard extends Component {
             this.setState(state => {
                 const newList = []
                 const currentPlayers = state['currentPlayers'];
-                for (let i = 0; i < currentPlayers; i++) {
+                for (let i = 0; i < currentPlayers.length; i++) {
                     if (currentPlayers[i]['username'] == data['username']) {
                         currentPlayers[i]['latestAction'] = data['action'];
+                        currentPlayers[i]['currentContribution'] = data['currentContribution'];
+                        if (data['action'] != 'fold') {
+                            currentPlayers[i]['bank'] -= data['amount'];
+                        }
                     }
                     newList.push(currentPlayers[i]);
                 }
@@ -72,13 +82,28 @@ class InGameDashboard extends Component {
         });
     }
 
+    getMyCurrentContribution() {
+        const { currentPlayers } = this.state;
+        const { username } = this.props;
+        console.log(currentPlayers)
+        console.log(username)
+
+        for (let i = 0; i < currentPlayers.length; i++) {
+            if (currentPlayers[i]['username'] == username) {
+                return currentPlayers[i]['currentContribution'];
+            }
+        }
+    }
+
     showButtonForAction(action) {
+        const { highestCurrentContribution, currentContribution } = this.state;
+
         if (action == 'fold') {
             return <Button onClick={() => this.doAction('fold')}>Fold</Button>
         } else if (action == 'raise') {
             return <Button onClick={() => this.doAction('raise')}>Raise</Button>
         } else if (action == 'call') {
-            return <Button onClick={() => this.doAction('call')}>Call</Button>
+            return <Button onClick={() => this.doAction('call')}>Call for {highestCurrentContribution - this.getMyCurrentContribution()}</Button>
         } else {
             return <Button onClick={() => this.doAction('check')}>Check</Button>
         }
@@ -111,8 +136,9 @@ class InGameDashboard extends Component {
     call() {
         const { socket, username } = this.props;
         const { highestCurrentContribution } = this.state;
+        const currentContribution = highestCurrentContribution - this.getMyCurrentContribution()
 
-        socket.emit('call', {username: username, amount: highestCurrentContribution});
+        socket.emit('call', {username: username, amount: highestCurrentContribution-currentContribution});
         this.setState({options: []});
     }
 
@@ -120,11 +146,12 @@ class InGameDashboard extends Component {
         const { 
             currentPlayers, 
             options, 
-            highestCurrentContribution, 
+            highestCurrentContribution,
             bank, 
             showRaiseDialog,
             personalCards,
-            communityCards 
+            communityCards,
+            pot 
         } = this.state;
         const { username, socket } = this.props;
 
@@ -132,7 +159,7 @@ class InGameDashboard extends Component {
             <List>
                 {
                     currentPlayers.map((element) => {
-                        return <ListItem>
+                        return <ListItem key={element['username']}>
                             <div>
                                 <ListItemText>{element['username']}</ListItemText>
                                 <ListItemText>{element['bank']}</ListItemText>
@@ -146,7 +173,7 @@ class InGameDashboard extends Component {
             <List>
                 {
                     personalCards.map((element) => {
-                        return <ListItem>
+                        return <ListItem key={element['value'] + element['suit']}>
                             <ListItemText>{element['value']} of {element['suit']}</ListItemText>
                         </ListItem>
                     })
@@ -157,7 +184,7 @@ class InGameDashboard extends Component {
             <List>
                 {
                     communityCards.map((element) => {
-                        return <ListItem>
+                        return <ListItem key={element['value'] + element['suit']}>
                             <ListItemText>{element['value']} of {element['suit']}</ListItemText>
                         </ListItem>
                     })
@@ -167,7 +194,7 @@ class InGameDashboard extends Component {
             <List>
                 {
                     options.map((element) => {
-                        return <ListItem>
+                        return <ListItem key={element}>
                             {this.showButtonForAction(element)}
                         </ListItem>
                     })
@@ -181,6 +208,8 @@ class InGameDashboard extends Component {
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
             />
+            <h3>Pot: {pot}</h3>
+            <h3>Your Current Contribution: {this.getMyCurrentContribution()}</h3>
             <h3>Highest Contribution: {highestCurrentContribution}</h3>
         </div>
     }
