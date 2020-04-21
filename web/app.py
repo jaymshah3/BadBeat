@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
 socketio = SocketIO()
-socketio.init_app(app, cors_allowepd_origins='*')
+socketio.init_app(app, cors_allowed_origins='*')
 
 clients = {}
 memory = GameDataService()
@@ -45,15 +45,19 @@ def handle_join_request(data):
     global memory
     global active_clients
     if data['approve']:
+        print('success: ' + str(data['room']))
         emit("user joined", data,
          room=data['room'])
         change_active_clients(1)
         memory.add_player(data['username'],active_clients,data['bank'])
-    emit('request response', {data}, room=clients[data['username']])
+    emit('request response', data, room=clients[data['username']])
 
 @socketio.on('list users')
 def list_users(data):
-    emit('user list', {'players': memory.get_players()},room=data['room'])
+    emit('user list', {'players': list(map(lambda p: {
+        'username': p.name, 
+        'bank': p.bank
+    }, memory.get_players()))},room=data['room'])
 
 @socketio.on('leave')
 def on_leave(data):
@@ -67,12 +71,13 @@ def on_leave(data):
 
 @socketio.on('start')
 def on_start(data):
+    print('got start')
     global has_game_started
     global memory
     room = data['room']
     has_game_started = True
-    emit('server_start', {'message': "Game has started"}, room=room)
-    preflop(memory.get_players,clients,data['small_blind'],data['big_blind'])
+    emit('game start', {'message': "Game has started"}, room=room)
+    preflop(memory.get_players(), clients, data['small_blind'], data['big_blind'])
     
 
 def change_active_clients(increment):
