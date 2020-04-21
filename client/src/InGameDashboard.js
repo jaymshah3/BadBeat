@@ -136,7 +136,7 @@ class InGameDashboard extends Component {
     call() {
         const { socket, username } = this.props;
         const { highestCurrentContribution } = this.state;
-        const currentContribution = highestCurrentContribution - this.getMyCurrentContribution()
+        const currentContribution = this.getMyCurrentContribution()
 
         socket.emit('call', {username: username, amount: highestCurrentContribution-currentContribution});
         this.setState({options: []});
