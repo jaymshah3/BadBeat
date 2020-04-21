@@ -19,10 +19,10 @@ class Player():
     # this method will be called if a 
     # player chooses call as the amount var will be table's highest contribution
     def bet(self,amount):
-        if amount + self.current_contribution > self.bank:
-            raise ValueError("Insufficient Funds")
         if self.current_contribution is None:
             self.current_contribution = 0
+        if amount + self.current_contribution > self.bank:
+            raise ValueError("Insufficient Funds")
         self.current_contribution += amount
         self.invested += amount
     

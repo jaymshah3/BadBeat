@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import { Button, TextField } from '@material-ui/core';
 import io from 'socket.io-client';
+import PreGameDashboard from './PreGameDashboard.js';
 
 class App extends Component {
   constructor() {
@@ -10,47 +11,99 @@ class App extends Component {
       socket: null,
       endpoint: 'http://localhost:5000',
       username: '',
-      isInGame: false,
-      joinRequests: [{name:"aditya", bank: 5000}]
+      bank: '',
+      isInPreGame: false,
+      requested: false,
+      isOwner: false,
+      room: 1,
+      usernameError: false
     };
   }
 
   componentDidMount() {
     const { endpoint } = this.state;
-    console.log(endpoint);
     const socket = io(endpoint);
+    console.log(socket);
     this.setState({socket: socket})
+
+    this.defineHandlers(socket);
+  }
+
+  defineHandlers(socket) {
+    socket.on('request response', (data) => {
+      if (data['approve']) {
+        this.setState({requested: false, isInPreGame: true, usernameError: false});
+      } else {
+        this.setState({requested: false});
+      }
+    });
+
+    socket.on('owner', () => {
+      console.log('got owner')
+      this.setState({requested: false, isInPreGame: true, isOwner: true, usernameError: false});
+    });
+
+    socket.on('duplicate username', () => {
+      this.setState({requested: false, usernameError: true})
+    });
   }
 
   render() {
-    const { username, isInGame, joinRequests } = this.state;
+    const { 
+      username, 
+      usernameError, 
+      isInPreGame, 
+      socket, 
+      isOwner, 
+      room, 
+      requested,
+      bank
+    } = this.state;
+
     const isDisabled = username == "" || username == undefined;
 
     const outOfGame = (
-      <form onSubmit={() => this.joinGame()}>
-        <TextField value={this.state.username} onChange={this.handleUsernameChange} id="outlined-basic" label="Username" variant="outlined" />
-        <Button variant="contained" type="submit" disabled={isDisabled}>Join Game</Button>
-      </form>
+      <div>
+        <TextField 
+          value={this.state.username} 
+          onChange={this.handleUsernameChange} 
+          id="outlined-basic" 
+          label="Username" 
+          variant="outlined" 
+          error={usernameError}
+          helperText={usernameError ? "Username already exists." : ""}
+        />
+        <TextField 
+          value={bank} 
+          onChange={this.handleBankChange} 
+          id="outlined-basic" 
+          label="Bank" 
+          variant="outlined" 
+          // error={}
+          // helperText={usernameError ? "Username already exists." : ""}
+        />
+        <Button variant="contained" type="submit" disabled={isDisabled} onClick={() => this.joinGame()}>Join Game</Button>
+      </div>
     );
 
-    const inGame = (
-      <ul>
-          {
-            joinRequests.map((element) => {
-              return <li key={element.name}>
-                <div>
-                  <p>{element['name']}</p>
-                  <p>{element['bank']}</p>
-                  <Button variant="contained" color="primary" onClick={() => {this.handleRequest(element, true)}}>Approve</Button>
-                  <Button variant="contained" color="secondary" onClick={() => this.handleRequest(element, false)}>Reject</Button>
-                </div>
-              </li>
-            })
-          }
-        </ul>
-    );
+    const requestedView = <h1>Requested...</h1>
 
-    const show = isInGame ? inGame : outOfGame;
+    const inPreGame = <PreGameDashboard 
+                        socket={socket} 
+                        isOwner={isOwner} 
+                        room={room} 
+                        username={username}
+                        bank={parseInt(bank)}
+                      />;
+
+    let show;
+    if (requested) {
+      show = requestedView;
+    } else if (isInPreGame) {
+      show = inPreGame;
+    } else {
+      show = outOfGame;
+    }
 
     return (
       <div className="App">
@@ -65,32 +118,28 @@ class App extends Component {
     });
   }
 
-  handleRequest = (element, decision) => {
-    const { socket } = this.state;
-
-    if (decision) {
-      console.log("approve");
+  handleBankChange = (e) => {
+    const entry = e.target.value;
+    let valueToDisplay;
+    if (entry == "") {
+      valueToDisplay = "";
     } else {
-      console.log("reject");
+      valueToDisplay = parseInt(entry);
     }
+
+    this.setState({
+      bank: valueToDisplay
+    });
   }
 
   joinGame() {
-    const { socket } = this.state;
+    const { socket, username, bank } = this.state;
 
-    this.setState({isInGame: true});
+    this.setState({requested: true});
     socket.emit('request to join', {
-      username: 'jawn',
+      username: username,
       room: 1,
-      bank: 1000
-    })
-    socket.on('join request', (data) => {
-      this.setState((state) => {
-        const joinRequests = state.joinRequests.concat(data)
-        return {
-          joinRequests
-        }
-      })
+      bank: bank
     })
   }
 }

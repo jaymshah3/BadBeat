@@ -43,11 +43,9 @@ def handle_fold(data):
     if data['username'] is not current_player.name:
         pass
         #error
-    emit('player folded', {data}, broadcast=True)
     player_round.remove_current()
-    if current_player == aggressors[-1]:
-        if not len(aggressors) == 1:
-            aggressors.pop()
+    data['action'] = 'fold'
+    emit('player action', data, broadcast=True)
     current_player = player_round.get_next_player().player
     get_options()
 
@@ -63,7 +61,9 @@ def handle_call(data):
     current_player.bet(data['amount'])
     current_round_pot += data['amount']
     broadcast_pot(current_round_pot)
-    emit('player called', {data}, broadcast=True)
+    data['action'] = 'call'
+    data['currentContribution'] = current_player.current_contribution
+    emit('player action', data, broadcast=True)
     current_player = player_round.get_next_player().player
     get_options()
         
@@ -92,8 +92,10 @@ def handle_raise(data):
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
     broadcast_pot(current_round_pot)
-    emit('highest_contribution', {'amount': highest_current_contribution})
-    emit('player raised', {data}, broadcast=True)
+    data['action'] = 'raise'
+    data['currentContribution'] = current_player.current_contribution
+    emit('highest contribution', {'highest_contribution': highest_current_contribution}, broadcast=True)
+    emit('player action', data, broadcast=True)
     current_player = player_round.get_next_player().player
     get_options()
 
@@ -141,6 +143,12 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     big_blind_amount = big_blind_amt
     highest_current_contribution = big_blind_amount
     player_round.small_blind.player.bet(small_blind_amount)
+    emit('player action', {
+        'username': player_round.small_blind.player.name,
+        'amount': small_blind_amount,
+        'action': 'small blind',
+        'currentContribution': small_blind_amount
+    }, broadcast=True)
     player_round.big_blind.player.bet(big_blind_amount)
     current_round_pot += player_round.small_blind.current_contribution
     current_round_pot += player_round.big_blind.current_contribution
@@ -148,6 +156,13 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     aggressors.append(player_round.big_blind.player)
     if len(players) == 2:
         heads_up = True
+    emit('player action', {
+        'username': player_round.big_blind.player.name,
+        'amount': big_blind_amount,
+        'action': 'big blind',
+        'currentContribution': big_blind_amount
+    }, broadcast=True)
+    emit('highest contribution', {'highest_contribution': big_blind_amount}, broadcast=True)
     deal_cards()
     get_options() 
 
@@ -323,20 +338,26 @@ def get_options():
             options = []
             options.append("fold")
             if (current_player.current_contribution is None or 
-            current_player.current_contribution < highest_current_contribution and
+            current_player.current_contribution < highest_current_contribution 
+            or (player_round.big_blind.player == current_player and 
+            game_state == GameState.PREFLOP) and
             highest_current_contribution != 0):
                 options.append("raise")
             if (current_player.current_contribution is None 
             or current_player.current_contribution < highest_current_contribution 
-            and highest_current_contribution != 0):
+            and highest_current_contribution != 0):  
                 options.append("call")
-            if highest_current_contribution == 0:
+            if (highest_current_contribution == 0 or 
+            player_round.big_blind.player == current_player and 
+            game_state == GameState.PREFLOP 
+            and current_player.current_contribution == highest_current_contribution):
                 options.append("check")
                 options.append("bet")
             
             emit('options for player', {'options': options, 
             'highest_contribution': highest_current_contribution},
              room=clients[current_player.name])
+
 
 def deal_cards():
     global deck
@@ -346,9 +367,21 @@ def deal_cards():
         pair = [deck.get_top_card(), deck.get_top_card()]
         players[i].set_cards(pair)
         print(str(players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))
-        emit('dealt cards', {'cards': [{'value':pair[0].val, 'suit': pair[0].suit},
-            {'value':pair[1].val, 'suit': pair[1].suit}]},
-            room=clients[players[i].name]) 
+        emit('dealt cards', 
+            {
+                'cards': [
+                    {
+                        'value':pair[0].value_to_str(), 
+                        'suit': pair[0].suit_to_str()
+                    },
+                    {
+                        'value':pair[1].value_to_str(),
+                        'suit': pair[1].suit_to_str()
+                    }
+                ]
+            },
+            room=clients[players[i].name]
+        ) 
 
 
 
