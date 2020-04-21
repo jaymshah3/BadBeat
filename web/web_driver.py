@@ -18,6 +18,7 @@ class GameState(Enum):
     WINNER = 5
 
 players = []
+heads_up = False
 pot = 0
 current_round_pot = 0
 deck = Deck()
@@ -102,6 +103,7 @@ def run_next_game_state(next_game_state):
     global current_round_pot
     global player_round
     global clients
+    global heads_up
     for player in players:
         emit('withdraw', {'amount': player.current_contribution},
         room=clients[player.name])
@@ -114,11 +116,11 @@ def run_next_game_state(next_game_state):
         distribute()
     else:
         if next_game_state == GameState.FLOP:
-            flop()
+            flop(heads_up)
         elif next_game_state ==GameState.TURN:
-            turn()
+            turn(heads_up)
         elif next_game_state == GameState.RIVER:
-            river()
+            river(heads_up)
         else:
             distribute()
 
@@ -130,6 +132,7 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     global small_blind_amount
     global big_blind_amount
     global highest_current_contribution
+    global heads_up
     players = given_players
     clients = given_clients
     small_blind = 0
@@ -143,10 +146,12 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     current_round_pot += player_round.big_blind.current_contribution
     current_player = player_round.current_node.player
     aggressors.append(player_round.big_blind.player)
+    if len(players) == 2:
+        heads_up = True
     deal_cards()
     get_options() 
 
-def flop():
+def flop(heads_up):
     global community_cards
     global deck
     global player_round
@@ -159,13 +164,16 @@ def flop():
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    current_player_node= player_round.small_blind
-    while current_player_node.isFold:
-        current_player_node = current_player.next_node
+    if heads_up:
+        current_player_node = player_round.big_blind
+    else:
+        current_player_node= player_round.small_blind
+        while current_player_node.isFold:
+            current_player_node = current_player.next_node
     current_player = current_player_node.player
     get_options()
 
-def turn():
+def turn(heads_up):
     global community_cards
     global deck
     global player_round
@@ -174,13 +182,16 @@ def turn():
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    current_player_node= player_round.small_blind
-    while current_player_node.isFold:
-        current_player_node = current_player.next_node
+    if heads_up:
+        current_player_node = player_round.big_blind
+    else:
+        current_player_node= player_round.small_blind
+        while current_player_node.isFold:
+            current_player_node = current_player.next_node
     current_player = current_player_node.player
     get_options()
 
-def river():
+def river(heads_up):
     global community_cards
     global deck
     global player_round
@@ -189,9 +200,12 @@ def river():
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
-    current_player_node= player_round.small_blind
-    while current_player_node.isFold:
-        current_player_node = current_player.next_node
+    if heads_up:
+        current_player_node = player_round.big_blind
+    else:
+        current_player_node= player_round.small_blind
+        while current_player_node.isFold:
+            current_player_node = current_player.next_node
     current_player = current_player_node.player
     get_options()
 
