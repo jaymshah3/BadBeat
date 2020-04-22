@@ -56,6 +56,7 @@ def handle_call(data):
     global player_round
     global game_state
     global current_round_pot
+    global pot
     print("CALL")
     if data['username'] is not current_player.name:
         pass
@@ -63,7 +64,7 @@ def handle_call(data):
     print(data['amount'])
     current_player.bet(data['amount'])
     current_round_pot += data['amount']
-    broadcast_pot(current_round_pot)
+    broadcast_pot(current_round_pot + pot)
     data['action'] = 'call'
     data['currentContribution'] = current_player.current_contribution
     emit('player action', data, broadcast=True)
@@ -78,6 +79,7 @@ def handle_raise(data):
     global player_round
     global game_state
     global current_round_pot
+    global pot
     global highest_current_contribution
     global prev_high_raise
     global aggressors
@@ -97,7 +99,7 @@ def handle_raise(data):
         current_round_pot += data['amount']
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
-    broadcast_pot(current_round_pot)
+    broadcast_pot(current_round_pot + pot)
     data['action'] = 'raise'
     data['currentContribution'] = current_player.current_contribution
     emit('highest contribution', {'highest_contribution': highest_current_contribution}, broadcast=True)
@@ -114,8 +116,9 @@ def run_next_game_state(next_game_state):
     global heads_up
     print('RUN_NEXT_GAME_STATE')
     for player in players:
-        emit('withdraw', {'amount': player.current_contribution},
-        room=clients[player.name])
+        # emit('withdraw', {'amount': player.current_contribution},
+        # room=clients[player.name])
+        emit('current contribution', {'amount': 0}, broadcast=True)
         player.current_contribution = None
     highest_current_contribution = 0
     pot += current_round_pot
@@ -171,6 +174,7 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
         'action': 'big blind',
         'currentContribution': big_blind_amount
     }, broadcast=True)
+    broadcast_pot(current_round_pot)
     emit('highest contribution', {'highest_contribution': big_blind_amount}, broadcast=True)
     deal_cards()
     get_options() 
@@ -282,7 +286,7 @@ def distribute():
             calc_pot += min_stack * len(distrubute_players)
             for p in distrubute_players:
                 p.invested -= min_stack
-            winners = find_winners(p for p in distrubute_players if not p.isFold)
+            winners = find_winners([p for p in distrubute_players if not p.isFold])
             if len(winners) == 1:
                 winners[0].result += calc_pot
             else:
