@@ -60,6 +60,7 @@ def handle_call(data):
     if data['username'] is not current_player.name:
         pass
         #error
+    print(data['amount'])
     current_player.bet(data['amount'])
     current_round_pot += data['amount']
     broadcast_pot(current_round_pot)
@@ -195,6 +196,7 @@ def flop(heads_up):
         while current_player_node.isFold:
             current_player_node = current_player.next_node
     current_player = current_player_node.player
+    player_round.current_node = current_player_node
     get_options()
 
 def turn(heads_up):
@@ -214,6 +216,7 @@ def turn(heads_up):
         while current_player_node.isFold:
             current_player_node = current_player.next_node
     current_player = current_player_node.player
+    player_round.current_node = current_player_node
     get_options()
 
 def river(heads_up):
@@ -232,6 +235,7 @@ def river(heads_up):
         while current_player_node.isFold:
             current_player_node = current_player.next_node
     current_player = current_player_node.player
+    player_round.current_node = current_player_node
     get_options()
 
 def find_winners(all_players):
