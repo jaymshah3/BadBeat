@@ -29,7 +29,6 @@ class InGameDashboard extends Component {
     }
 
     componentDidMount() {
-        const { currentPlayers } = this.state;
         this.defineHandlers();
     }
 
@@ -58,14 +57,18 @@ class InGameDashboard extends Component {
                 const newList = []
                 const currentPlayers = state['currentPlayers'];
                 for (let i = 0; i < currentPlayers.length; i++) {
+                    let newObj = {};
                     if (currentPlayers[i]['username'] == data['username']) {
-                        currentPlayers[i]['latestAction'] = data['action'];
-                        currentPlayers[i]['currentContribution'] = data['currentContribution'];
+                        newObj['username'] = currentPlayers[i]['username'];
+                        newObj['latestAction'] = data['action'];
+                        newObj['currentContribution'] = data['currentContribution'];
                         if (data['action'] != 'fold') {
-                            currentPlayers[i]['bank'] -= data['amount'];
+                            newObj['bank'] = currentPlayers[i]['bank'] - data['amount'];
                         }
+                    } else {
+                        newObj = currentPlayers[i];
                     }
-                    newList.push(currentPlayers[i]);
+                    newList.push(newObj);
                 }
                 return {
                     currentPlayers: newList
@@ -85,8 +88,6 @@ class InGameDashboard extends Component {
     getMyCurrentContribution() {
         const { currentPlayers } = this.state;
         const { username } = this.props;
-        console.log(currentPlayers)
-        console.log(username)
 
         for (let i = 0; i < currentPlayers.length; i++) {
             if (currentPlayers[i]['username'] == username) {
