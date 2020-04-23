@@ -170,6 +170,9 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     big_blind_amount = big_blind_amt
     highest_current_contribution = big_blind_amount
     player_round.small_blind.player.bet(small_blind_amount)
+    emit('withdraw', {'username':player_round.small_blind.player.name,
+     'amount': player_round.small_blind.player.current_contribution},
+        broadcast=True)
     if player_round.small_blind.player.invested ==player_round.small_blind.player.bank:
         print('incrementing all_ins')
         player_round.small_blind.isAllIn = True
@@ -181,6 +184,9 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
         'currentContribution': small_blind_amount
     }, broadcast=True)
     player_round.big_blind.player.bet(big_blind_amount)
+    emit('withdraw', {'username':player_round.big_blind.player.name,
+     'amount': player_round.big_blind.player.current_contribution},
+        broadcast=True)
     if player_round.big_blind.player.invested ==player_round.big_blind.player.bank:
         print('incrementing all_ins')
         player_round.big_blind.isAllIn = True
