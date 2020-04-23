@@ -31,9 +31,12 @@ class Round():
         self.current_node.player.isFold = True
         self.length -= 1
        
+    def all_in(self):
+        self.current_node.isAllIn = True
+        self.current_node.player.isAllIn = True
     def get_next_player(self):
         next_node = self.current_node.next_node
-        while next_node.isFold:
+        while next_node.isFold or next_node.isAllIn:
             next_node = next_node.next_node
         self.current_node = next_node
         return next_node
