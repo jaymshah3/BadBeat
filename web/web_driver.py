@@ -65,6 +65,8 @@ def handle_call(data):
         #error
     print(data['amount'])
     current_player.bet(data['amount'])
+    emit('withdraw', {'username':current_player.name, 'amount': current_player.current_contribution},
+        broadcast=True)
     if current_player.bank == current_player.invested:
         number_of_all_ins+=1
         player_round.all_in()
@@ -100,6 +102,8 @@ def handle_raise(data):
     if current_player.current_contribution is not None:
         current_round_pot += data['amount']-current_player.current_contribution
         current_player.bet(data['amount']-current_player.current_contribution)
+        emit('withdraw', {'username':current_player.name, 'amount': current_player.current_contribution},
+        broadcast=True)
     else:
         current_player.bet(data['amount'])
         current_round_pot += data['amount']
