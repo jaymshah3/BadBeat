@@ -6,6 +6,9 @@ class Player():
         self.id_num = id_num
         self.current_contribution = None
         self.cards = None
+        self.invested = 0
+        self.result = 0
+        self.isFold = False
 
     def set_cards(self, cards):
         self.cards = sorted(cards, key= lambda card:card.value)
@@ -21,11 +24,7 @@ class Player():
         if amount + self.current_contribution > self.bank:
             raise ValueError("Insufficient Funds")
         self.current_contribution += amount
+        self.invested += amount
     
-    def withdraw_bank(self):
-        if self.current_contribution is not None:
-            if self.bank - self.current_contribution < 0:
-                raise ValueError("Insuffient Funds")
-            self.bank -= self.current_contribution
-
-    
+    def apply_result(self):
+        self.bank += self.result

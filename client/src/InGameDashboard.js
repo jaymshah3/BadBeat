@@ -13,8 +13,10 @@ class InGameDashboard extends Component {
                 username: x['username'], 
                 bank: x['bank'], 
                 latestAction: 'check',
+                currentContribution: 0
             }
         });
+        console.log("beginning: " + JSON.stringify(newList))
         this.state = {
             starting: true,
             personalCards: [],
@@ -33,7 +35,7 @@ class InGameDashboard extends Component {
     }
 
     defineHandlers() {
-        const { socket } = this.props;
+        const { socket, username } = this.props;
 
         socket.on('dealt cards', (data) => {
             this.setState({personalCards: data['cards']})
@@ -53,6 +55,8 @@ class InGameDashboard extends Component {
         });
 
         socket.on('player action', (data) => {
+            console.log("HIT" + JSON.stringify(data))
+            console.log(this.state.currentPlayers)
             this.setState(state => {
                 const newList = []
                 const currentPlayers = state['currentPlayers'];
@@ -70,6 +74,7 @@ class InGameDashboard extends Component {
                     }
                     newList.push(newObj);
                 }
+                console.log(newList)
                 return {
                     currentPlayers: newList
                 }
@@ -82,6 +87,22 @@ class InGameDashboard extends Component {
 
         socket.on('community cards', (data) => {
             this.setState({communityCards: data['community_cards']});
+        });
+
+        socket.on('current contribution', (data) => {
+            this.setState(state => {
+                const newList = []
+                const currentPlayers = state['currentPlayers'];
+                for (let i = 0; i < currentPlayers.length; i++) {
+                    if (currentPlayers[i]['username'] == username) {
+                        currentPlayers[i]['currentContribution'] = data['amount'];
+                    }
+                    newList.push(currentPlayers[i]);
+                }
+                return {
+                    currentPlayers: newList
+                }
+            });
         });
     }
 
@@ -97,7 +118,7 @@ class InGameDashboard extends Component {
     }
 
     showButtonForAction(action) {
-        const { highestCurrentContribution, currentContribution } = this.state;
+        const { highestCurrentContribution } = this.state;
 
         if (action == 'fold') {
             return <Button onClick={() => this.doAction('fold')}>Fold</Button>
@@ -105,8 +126,10 @@ class InGameDashboard extends Component {
             return <Button onClick={() => this.doAction('raise')}>Raise</Button>
         } else if (action == 'call') {
             return <Button onClick={() => this.doAction('call')}>Call for {highestCurrentContribution - this.getMyCurrentContribution()}</Button>
-        } else {
+        } else if (action =='check') {
             return <Button onClick={() => this.doAction('check')}>Check</Button>
+        } else if (action == 'bet') {
+            return <Button onClick={() => this.doAction('raise')}>Bet</Button>
         }
     }
 

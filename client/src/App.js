@@ -82,7 +82,7 @@ class App extends Component {
           // error={}
           // helperText={usernameError ? "Username already exists." : ""}
         />
-        <Button variant="contained" type="submit" disabled={isDisabled} onClick={() => this.joinGame()}>Join Game</Button>
+        <Button variant="contained" type="submit" disabled={isDisabled || isNaN(bank)} onClick={() => this.joinGame()}>Join Game</Button>
       </div>
     );
 
@@ -119,16 +119,8 @@ class App extends Component {
   }
 
   handleBankChange = (e) => {
-    const entry = e.target.value;
-    let valueToDisplay;
-    if (entry == "") {
-      valueToDisplay = "";
-    } else {
-      valueToDisplay = parseInt(entry);
-    }
-
     this.setState({
-      bank: valueToDisplay
+      bank: e.target.value
     });
   }
 
@@ -139,7 +131,7 @@ class App extends Component {
     socket.emit('request to join', {
       username: username,
       room: 1,
-      bank: bank
+      bank: parseInt(bank)
     })
   }
 }
