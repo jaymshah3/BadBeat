@@ -6,13 +6,13 @@ class RaiseDialog extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            amount: 0
+            amount: ''
         }
     }
 
     handleAmountChange(e) {
         this.setState({
-            amount: parseInt(e.target.value)
+            amount: e.target.value
         });
     }
 
@@ -22,7 +22,7 @@ class RaiseDialog extends Component {
 
         socket.emit('raise', {
             username: username,
-            amount: amount
+            amount: parseInt(amount)
         });
         onClose(true);
     }
@@ -40,8 +40,8 @@ class RaiseDialog extends Component {
         return <Dialog onClose={() => this.handleClose()} open={open}>
             <DialogTitle>How much do you want to add?</DialogTitle>
             <p>Your bank is {bank}.</p>
-            <TextField value={amount} onChange={this.handleAmountChange}/>
-            <Button onClick={() => this.raise()}>Done</Button>
+            <TextField value={amount} onChange={(e) => this.handleAmountChange(e)}/>
+            <Button onClick={() => this.raise()} disabled={isNaN(amount)}>Done</Button>
         </Dialog>
     }
 }
