@@ -26,7 +26,7 @@ class InGameDashboard extends Component {
             currentPlayers: newList,
             pot: 0,
             bank: props['bank'],
-            showRaiseDialog: false
+            showRaiseDialog: false,
         }
     }
 
@@ -66,8 +66,9 @@ class InGameDashboard extends Component {
                         newObj['username'] = currentPlayers[i]['username'];
                         newObj['latestAction'] = data['action'];
                         newObj['currentContribution'] = data['currentContribution'];
+                        newObj['bank'] = currentPlayers[i]['bank']
                         if (data['action'] != 'fold') {
-                            newObj['bank'] = currentPlayers[i]['bank'] - data['amount'];
+                            newObj['bank'] -= data['amount'];
                         }
                     } else {
                         newObj = currentPlayers[i];
@@ -104,6 +105,10 @@ class InGameDashboard extends Component {
                 }
             });
         });
+
+        socket.on('current hand', (data) => {
+            this.setState({currentHand: data});
+        });
     }
 
     getMyCurrentContribution() {
@@ -114,6 +119,31 @@ class InGameDashboard extends Component {
             if (currentPlayers[i]['username'] == username) {
                 return currentPlayers[i]['currentContribution'];
             }
+        }
+    }
+
+    getMyCurrentBank() {
+        const { currentPlayers } = this.state;
+        const { username } = this.props;
+
+        for (let i = 0; i < currentPlayers.length; i++) {
+            if (currentPlayers[i]['username'] == username) {
+                return currentPlayers[i]['bank'];
+            }
+        }
+    }
+
+    showCurrentHand() {
+        const { currentHand } = this.state;
+        if (currentHand == null) {
+            return null;
+        } else {
+            let cardsString = '';
+            for (let i = 0; i < currentHand['cards'].length; i++) {
+                cardsString += currentHand['cards'][i]['value'] + " of " + currentHand['cards'][i]['suit']
+                cardsString += ", "
+            }
+            return <h3>Your best hand is {currentHand['major_group']} with cards {cardsString}</h3>
         }
     }
 
@@ -171,13 +201,14 @@ class InGameDashboard extends Component {
             currentPlayers, 
             options, 
             highestCurrentContribution,
-            bank, 
             showRaiseDialog,
             personalCards,
             communityCards,
             pot 
         } = this.state;
         const { username, socket } = this.props;
+
+        const bank = this.getMyCurrentBank()
 
         return <div>
             <List>
@@ -232,6 +263,7 @@ class InGameDashboard extends Component {
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
             />
+            {this.showCurrentHand()}
             <h3>Pot: {pot}</h3>
             <h3>Your Current Contribution: {this.getMyCurrentContribution()}</h3>
             <h3>Highest Contribution: {highestCurrentContribution}</h3>

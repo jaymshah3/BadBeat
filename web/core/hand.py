@@ -108,27 +108,34 @@ class Hand():
 
         return self.compare(other) == 0
 
-class RoyalFlush(Hand):
-    def compare(self, other):
-        return 0
-
     def __str__(self):
         outp = ""
         for c in self.cards:
             outp += c.str_condensed()
             outp += ", "
-        return "royal flush " + outp
+        return self.major_group_string() + " " + outp
+
+    def serialize(self):
+        return {
+            "major_group": self.major_group_string(),
+            "cards": [c.serialize() for c in self.cards]
+        }
+
+class RoyalFlush(Hand):
+    def compare(self, other):
+        return 0
+
+    def major_group_string(self):
+        return "Royal Flush"
+
 
 class StraightFlush(Hand):
     def compare(self, other):
         return self.max_card.value - other.max_card.value
 
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "straight flush " + outp
+    def major_group_string(self):
+        return "Straight Flush"
+
 
 class FourOfAKind(Hand):
     def compare(self, other):
@@ -141,12 +148,9 @@ class FourOfAKind(Hand):
         else:
             return four_of_a_kind_a[0] - four_of_a_kind_b[0]
     
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "four of a kind " + outp
+    def major_group_string(self):
+        return "Four of a Kind"
+        
 
 class FullHouse(Hand):
     def compare(self, other):
@@ -159,12 +163,9 @@ class FullHouse(Hand):
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
 
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "full house " + outp
+    def major_group_string(self):
+        return "Full House"
+        
 
 class Flush(Hand):
     def compare(self, other):
@@ -172,24 +173,18 @@ class Flush(Hand):
             if self.cards[i].value != other.cards[i].value:
                 return self.cards[i].value - other.cards[i].value
         return 0
-    
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "flush " + outp
+
+    def major_group_string(self):
+        return "Flush"
+     
 
 class Straight(Hand):
     def compare(self, other):
         return self.max_card.value - other.max_card.value
+ 
+    def major_group_string(self):
+        return "Straight"
     
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "straight " + outp
 
 class ThreeOfAKind(Hand):
     def compare(self, other):
@@ -204,13 +199,10 @@ class ThreeOfAKind(Hand):
                 return kicker_a[0] - kicker_b[0]
         else:
             return three_of_a_kind_a[0] - three_of_a_kind_b[0]
-    
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "three of a kind " + outp
+
+    def major_group_string(self):
+        return "Three of a Kind"
+     
 
 class TwoPair(Hand):
     def compare(self, other):
@@ -226,13 +218,10 @@ class TwoPair(Hand):
                 return pair_a[0] - pair_b[0]
         else:
             return pair_a[1] - pair_b[1]
-        
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "two pair " + outp
+
+    def major_group_string(self):
+        return "Two Pair"
+         
 
 class Pair(Hand):
     def compare(self, other):
@@ -248,13 +237,10 @@ class Pair(Hand):
                 if kicker_a[i] != kicker_b[i]:
                     return kicker_a[i] - kicker_b[i]
         return 0
-    
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "pair " + outp
+
+    def major_group_string(self):
+        return "Pair"
+     
 
 
 class HighCard(Hand):
@@ -263,10 +249,7 @@ class HighCard(Hand):
             if self.cards[i].value != other.cards[i].value:
                 return self.cards[i].value - other.cards[i].value
         return 0
-    
-    def __str__(self):
-        outp = ""
-        for c in self.cards:
-            outp += c.str_condensed()
-            outp += ", "
-        return "high card " + outp
+
+    def major_group_string(self):
+        return "High Card"
+     

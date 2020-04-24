@@ -198,7 +198,7 @@ def flop(heads_up):
     else:
         current_player_node= player_round.small_blind
         while current_player_node.isFold:
-            current_player_node = current_player.next_node
+            current_player_node = current_player_node.next_node
     current_player = current_player_node.player
     player_round.current_node = current_player_node
     get_options()
@@ -218,7 +218,7 @@ def turn(heads_up):
     else:
         current_player_node= player_round.small_blind
         while current_player_node.isFold:
-            current_player_node = current_player.next_node
+            current_player_node = current_player_node.next_node
     current_player = current_player_node.player
     player_round.current_node = current_player_node
     get_options()
@@ -237,7 +237,7 @@ def river(heads_up):
     else:
         current_player_node= player_round.small_blind
         while current_player_node.isFold:
-            current_player_node = current_player.next_node
+            current_player_node = current_player_node.next_node
     current_player = current_player_node.player
     player_round.current_node = current_player_node
     get_options()
@@ -328,7 +328,7 @@ def apply_result_to_all():
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand',{'hand': str(best_hand)},room=clients[player.name])
+    emit('current hand',best_hand.serialize(),room=clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
