@@ -69,7 +69,7 @@ def handle_call(data):
         broadcast=True)
     if current_player.bank == current_player.invested:
         number_of_all_ins+=1
-        player_round.all_in()
+        player_round.all_in_current_node()
     current_round_pot += data['amount']
     broadcast_pot(current_round_pot + pot)
     data['action'] = 'call'
@@ -111,7 +111,7 @@ def handle_raise(data):
     # we already added data['amount'] to current_player.current_contribution
     if current_player.bank == current_player.invested:
         number_of_all_ins+=1
-        player_round.all_in()
+        player_round.all_in_current_node()
     broadcast_pot(current_round_pot + pot)
     data['action'] = 'raise'
     data['currentContribution'] = current_player.current_contribution
@@ -127,8 +127,10 @@ def run_next_game_state(next_game_state):
     global player_round
     global clients
     global heads_up
+    global game_state
     print('RUN_NEXT_GAME_STATE')
     print(next_game_state.value)
+    game_state = next_game_state
     for player in players:
         # emit('withdraw', {'amount': player.current_contribution},
         # room=clients[player.name])
@@ -141,12 +143,8 @@ def run_next_game_state(next_game_state):
     if player_round.length == 1:
         distribute()
     else:
-        if next_game_state == GameState.FLOP:
-            flop(heads_up)
-        elif next_game_state ==GameState.TURN:
-            turn(heads_up)
-        elif next_game_state == GameState.RIVER:
-            river(heads_up)
+        if next_game_state != GameState.WINNER:
+            run_street(heads_up)
         else:
             distribute()
 
@@ -173,7 +171,7 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     emit('withdraw', {'username':player_round.small_blind.player.name,
      'amount': player_round.small_blind.player.current_contribution},
         broadcast=True)
-    if player_round.small_blind.player.invested ==player_round.small_blind.player.bank:
+    if player_round.small_blind.player.invested == player_round.small_blind.player.bank:
         print('incrementing all_ins')
         player_round.small_blind.isAllIn = True
         number_of_all_ins+=1
@@ -187,7 +185,7 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     emit('withdraw', {'username':player_round.big_blind.player.name,
      'amount': player_round.big_blind.player.current_contribution},
         broadcast=True)
-    if player_round.big_blind.player.invested ==player_round.big_blind.player.bank:
+    if player_round.big_blind.player.invested == player_round.big_blind.player.bank:
         print('incrementing all_ins')
         player_round.big_blind.isAllIn = True
         number_of_all_ins+=1
@@ -207,86 +205,34 @@ def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
     emit('highest contribution', {'highest_contribution': big_blind_amount}, broadcast=True)
     deal_cards()
     get_options() 
-
-def flop(heads_up):
+def run_street(heads_up):
     global community_cards
     global deck
     global player_round
     global current_player
     global number_of_all_ins
     global game_state
-    print('FLOP')
-    community_cards = [
+    print('Game State:' + str(game_state))
+    if game_state == GameState.FLOP:
+        community_cards = [
             deck.get_top_card(),
             deck.get_top_card(),
             deck.get_top_card()
         ]
+    else:
+        community_cards.append(deck.get_top_card())
     broadcast_community_cards()
     for player in player_round.get_current_players():
         current_hand_strength(player,community_cards)
     if number_of_all_ins >= player_round.length-1:
         game_state = GameState(game_state.value+1)
-        run_next_game_state(GameState(game_state))
+        run_next_game_state(game_state)
     else:
         if heads_up:
             current_player_node = player_round.big_blind
         else:
             current_player_node= player_round.small_blind
-            while current_player_node.isFold:
-                current_player_node = current_player.next_node
-        current_player = current_player_node.player
-        player_round.current_node = current_player_node
-        get_options()
-
-def turn(heads_up):
-    global community_cards
-    global deck
-    global player_round
-    global current_player
-    global game_state
-    global number_of_all_ins
-    print('TURN')
-    community_cards.append(deck.get_top_card())
-    broadcast_community_cards()
-    for player in player_round.get_current_players():
-        current_hand_strength(player,community_cards)
-    if number_of_all_ins >= player_round.length-1:
-        print('all_in')
-        print(game_state.value)
-        game_state = GameState(game_state.value+1)
-        print(game_state.value)
-        run_next_game_state(GameState(game_state))
-    else:
-        if heads_up:
-            current_player_node = player_round.big_blind
-        else:
-            current_player_node= player_round.small_blind
-            while current_player_node.isFold:
-                current_player_node = current_player.next_node
-        current_player = current_player_node.player
-        player_round.current_node = current_player_node
-        get_options()
-
-def river(heads_up):
-    global community_cards
-    global deck
-    global player_round
-    global current_player
-    global game_state
-    global number_of_all_ins
-    community_cards.append(deck.get_top_card())
-    broadcast_community_cards()
-    for player in player_round.get_current_players():
-        current_hand_strength(player,community_cards)
-    if number_of_all_ins == player_round.length-1:
-        game_state = GameState(game_state.value+1)
-        run_next_game_state(GameState(game_state))
-    else:
-        if heads_up:
-            current_player_node = player_round.big_blind
-        else:
-            current_player_node= player_round.small_blind
-            while current_player_node.isFold:
+            while current_player_node.is_fold:
                 current_player_node = current_player.next_node
         current_player = current_player_node.player
         player_round.current_node = current_player_node
@@ -296,11 +242,6 @@ def find_winners(all_players):
     global community_cards
     players = list(all_players)
     print("FIND_WINNERS")
-    if len(players) == 1:
-        print("single player")
-    else:
-        for p in players:
-            print(p.name)
     middle_cards = community_cards
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
@@ -343,7 +284,7 @@ def distribute():
             calc_pot += min_stack * len(distrubute_players)
             for p in distrubute_players:
                 p.invested -= min_stack
-            winners = find_winners([p for p in distrubute_players if not p.isFold])
+            winners = find_winners([p for p in distrubute_players if not p.is_fold])
             if len(winners) == 1:
                 winners[0].result += calc_pot
             else:
@@ -353,7 +294,7 @@ def distribute():
                         p.result += per_player_winnings
                 else:
                     per_player_winnings = int(per_player_winnings)
-                    extra_chip_winner = [p for p in aggressors.reverse() if not p.isFold]
+                    extra_chip_winner = [p for p in aggressors.reverse() if not p.is_fold]
                     for p in winners:
                         if p == extra_chip_winner[0]:
                             p.result +=1
