@@ -8,7 +8,7 @@ class Player():
         self.cards = None
         self.invested = 0
         self.result = 0
-        self.isFold = False
+        self.is_fold = False
 
     def set_cards(self, cards):
         self.cards = sorted(cards, key= lambda card:card.value)

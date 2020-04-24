@@ -55,8 +55,6 @@ class InGameDashboard extends Component {
         });
 
         socket.on('player action', (data) => {
-            console.log("HIT" + JSON.stringify(data))
-            console.log(this.state.currentPlayers)
             this.setState(state => {
                 const newList = []
                 const currentPlayers = state['currentPlayers'];
@@ -67,9 +65,29 @@ class InGameDashboard extends Component {
                         newObj['latestAction'] = data['action'];
                         newObj['currentContribution'] = data['currentContribution'];
                         newObj['bank'] = currentPlayers[i]['bank']
-                        if (data['action'] != 'fold') {
-                            newObj['bank'] -= data['amount'];
-                        }
+                    } else {
+                        newObj = currentPlayers[i];
+                    }
+                    newList.push(newObj);
+                }
+                console.log(newList)
+                return {
+                    currentPlayers: newList
+                }
+            });
+        });
+
+        socket.on('withdraw', (data) => {
+            this.setState(state => {
+                const newList = []
+                const currentPlayers = state['currentPlayers'];
+                for (let i = 0; i < currentPlayers.length; i++) {
+                    let newObj = {};
+                    if (currentPlayers[i]['username'] == data['username']) {
+                        newObj['username'] = currentPlayers[i]['username'];
+                        newObj['latestAction'] = data['action'];
+                        newObj['currentContribution'] = data['currentContribution'];
+                        newObj['bank'] = currentPlayers[i]['bank'] - data['amount']
                     } else {
                         newObj = currentPlayers[i];
                     }

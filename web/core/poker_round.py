@@ -1,9 +1,9 @@
 class PlayerNode():
     def __init__(self, player, next_node=None):
         self.next_node = next_node
-        self.isFold = False
+        self.is_fold= False
         self.player = player
-        self.isAllIn= False
+        self.is_all_in= False
 
 class Round():
     def __init__(self, players, small_blind=0):
@@ -27,13 +27,16 @@ class Round():
         self.big_blind = self.small_blind.next_node
         self.current_node = self.big_blind.next_node
     def remove_current(self):
-        self.current_node.isFold = True
-        self.current_node.player.isFold = True
+        self.current_node.is_fold = True
+        self.current_node.player.is_fold = True
         self.length -= 1
        
+    def all_in_current_node(self):
+        self.current_node.is_all_in = True
+        
     def get_next_player(self):
         next_node = self.current_node.next_node
-        while next_node.isFold:
+        while next_node.is_fold or next_node.is_all_in:
             next_node = next_node.next_node
         self.current_node = next_node
         return next_node
@@ -43,7 +46,7 @@ class Round():
         current_players.append(self.current_node.player)
         pointer = self.current_node.next_node
         while pointer != self.current_node:
-            if not pointer.isFold:
+            if not pointer.is_fold:
                 current_players.append(pointer.player)
             pointer = pointer.next_node
         return current_players
