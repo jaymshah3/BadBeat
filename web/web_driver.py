@@ -337,12 +337,8 @@ def assign_one_winner():
 def apply_result_to_all():
     global players
     for p in players:
-        if p.result < 0:
-            winnings = 0
-        else:
-            winnings = p.result
         emit('winners', 
-        {'username':p.name,'winnings':winnings,
+        {'username':p.name,'winnings': p.result if p.result > 0 else 0,
         'hand':[p.cards[0].serialize,p.cards[1].serialize]},
          broadast=True)
         p.apply_result()
