@@ -66,9 +66,7 @@ def handle_call(data):
         #error
     if (game_state == GameState.PREFLOP 
     and current_player == player_round.big_blind.player):
-        print('changed big blind action')
         big_blind_action = True
-    print(big_blind_action)
     print(data['amount'])
     current_player.bet(data['amount'])
     emit('withdraw', {'username':current_player.name, 'amount':data['amount']},
@@ -105,9 +103,7 @@ def handle_raise(data):
         #error
     if (game_state == GameState.PREFLOP 
     and current_player == player_round.big_blind.player):
-        print('changed big blind action')
         big_blind_action = True
-    print(big_blind_action)
     aggressors.append(current_player)
     prev_high_raise = highest_current_contribution
     # on raise, the amount is the final amount the player wants to be "in" for,
@@ -265,11 +261,11 @@ def find_winners(all_players):
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', best_hands[0].serialize(),room=clients[players[0].name])
+    emit('best hand', {'best_hand': str(best_hands[0])},room=clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', best_hands[i].serialize(),room=clients[players[i].name])
+        emit('best hand', {'best_hand': str(best_hands[i])},room=clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -341,11 +337,14 @@ def assign_one_winner():
 def apply_result_to_all():
     global players
     for p in players:
+        if p.result < 0:
+            winnings = 0
+        emit('winners', {'username':p.name,'winnings':winnings,'hand':[p.cards[0].serialize,p.cards[1].serialize]})
         p.apply_result()
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand', best_hand.serialize(),room=clients[player.name])
+    emit('current hand',{'hand': str(best_hand)},room=clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
@@ -365,7 +364,6 @@ def get_options():
     print(current_player.name)
     print(current_player.current_contribution)
     print(highest_current_contribution)
-    print(big_blind_action)
     if player_round.length == 1:
         distribute()
     else:
