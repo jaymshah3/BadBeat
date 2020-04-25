@@ -34,14 +34,14 @@ class RaiseDialog extends Component {
 
 
     render() {  
-        const { bank, open } = this.props;
+        const { bank, open, currentContribution } = this.props;
         const { amount } = this.state;
 
         return <Dialog onClose={() => this.handleClose()} open={open}>
-            <DialogTitle>How much do you want to add?</DialogTitle>
-            <p>Your bank is {bank}.</p>
+            <DialogTitle>How much do you want to raise to?</DialogTitle>
+            <p>Your bank is {bank}. You've already contributed {currentContribution}. </p>
             <TextField value={amount} onChange={(e) => this.handleAmountChange(e)}/>
-            <Button onClick={() => this.raise()} disabled={isNaN(amount)}>Done</Button>
+            <Button onClick={() => this.raise()} disabled={isNaN(amount) || amount == ''}>Done</Button>
         </Dialog>
     }
 }
@@ -51,7 +51,8 @@ RaiseDialog.propTypes = {
     open: bool,
     username: string,
     onClose: func,
-    socket: any
+    socket: any,
+    currentContribution: number
 }
 
 export default RaiseDialog;

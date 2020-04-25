@@ -12,21 +12,21 @@ class InGameDashboard extends Component {
             return {
                 username: x['username'], 
                 bank: x['bank'], 
-                latestAction: 'check',
+                latestAction: '',
                 currentContribution: 0
             }
         });
         console.log("beginning: " + JSON.stringify(newList))
         this.state = {
-            starting: true,
             personalCards: [],
             communityCards: [],
             options: [],
             highestCurrentContribution: 0,
             currentPlayers: newList,
             pot: 0,
-            bank: props['bank'],
             showRaiseDialog: false,
+            result: '',
+            winnings: 0
         }
     }
 
@@ -38,7 +38,11 @@ class InGameDashboard extends Component {
         const { socket, username } = this.props;
 
         socket.on('dealt cards', (data) => {
-            this.setState({personalCards: data['cards']})
+            this.setState({
+                personalCards: data['cards'],
+                result: '',
+                winnings: 0
+            });
         });
 
         socket.on('options for player', (data) => {
@@ -85,8 +89,8 @@ class InGameDashboard extends Component {
                     let newObj = {};
                     if (currentPlayers[i]['username'] == data['username']) {
                         newObj['username'] = currentPlayers[i]['username'];
-                        newObj['latestAction'] = data['action'];
-                        newObj['currentContribution'] = data['currentContribution'];
+                        newObj['latestAction'] = currentPlayers[i]['action'];
+                        newObj['currentContribution'] = currentPlayers[i]['currentContribution'];
                         newObj['bank'] = currentPlayers[i]['bank'] - data['amount']
                     } else {
                         newObj = currentPlayers[i];
@@ -108,15 +112,18 @@ class InGameDashboard extends Component {
             this.setState({communityCards: data['community_cards']});
         });
 
-        socket.on('current contribution', (data) => {
+        socket.on('reset current contribution', (data) => {
             this.setState(state => {
                 const newList = []
                 const currentPlayers = state['currentPlayers'];
                 for (let i = 0; i < currentPlayers.length; i++) {
-                    if (currentPlayers[i]['username'] == username) {
-                        currentPlayers[i]['currentContribution'] = data['amount'];
-                    }
-                    newList.push(currentPlayers[i]);
+                    let newObj = {};
+                    newObj['username'] = currentPlayers[i]['username'];
+                    newObj['latestAction'] = '';
+                    newObj['currentContribution'] = 0;
+                    newObj['bank'] = currentPlayers[i]['bank']
+                    
+                    newList.push(newObj);
                 }
                 return {
                     currentPlayers: newList
@@ -126,6 +133,33 @@ class InGameDashboard extends Component {
 
         socket.on('current hand', (data) => {
             this.setState({currentHand: data});
+        });
+
+        socket.on('best hand', (data) => {
+            this.setState({currentHand: data});
+        });
+
+        socket.on('result', (data) => {
+            this.setState(state => {
+                const newList = []
+                const currentPlayers = state['currentPlayers'];
+                for (let i = 0; i < currentPlayers.length; i++) {
+                    let newObj = {};
+                    newObj['username'] = currentPlayers[i]['username'];
+                    newObj['latestAction'] = '';
+                    newObj['currentContribution'] = 0;
+                    newObj['bank'] = currentPlayers[i]['bank'] + data['amount']
+                    
+                    newList.push(newObj);
+                }
+
+                return {
+                    highestCurrentContribution: 0,
+                    currentPlayers: newList,
+                    result: data['status'],
+                    winnings: data['amount']
+                }
+            });
         });
     }
 
@@ -148,6 +182,18 @@ class InGameDashboard extends Component {
             if (currentPlayers[i]['username'] == username) {
                 return currentPlayers[i]['bank'];
             }
+        }
+    }
+
+    showWinOrLoss() {
+        const { result, winnings } = this.state;
+        let amount = Math.abs(winnings);
+        if (result == "") {
+            return null;
+        } else if (result == 'win') {
+            return <h3>You won {amount}!</h3>
+        } else {
+            return <h3>You lost {amount}.</h3>
         }
     }
 
@@ -227,6 +273,7 @@ class InGameDashboard extends Component {
         const { username, socket } = this.props;
 
         const bank = this.getMyCurrentBank()
+        const currentContribution = this.getMyCurrentContribution();
 
         return <div>
             <List>
@@ -242,6 +289,7 @@ class InGameDashboard extends Component {
                 }
             </List>
             <Divider />
+            {this.showWinOrLoss()}
             <h3>Your cards</h3>
             <List>
                 {
@@ -280,10 +328,11 @@ class InGameDashboard extends Component {
                 socket={socket}
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
+                currentContribution={currentContribution}
             />
             {this.showCurrentHand()}
             <h3>Pot: {pot}</h3>
-            <h3>Your Current Contribution: {this.getMyCurrentContribution()}</h3>
+            <h3>Your Current Contribution: {currentContribution}</h3>
             <h3>Highest Contribution: {highestCurrentContribution}</h3>
         </div>
     }

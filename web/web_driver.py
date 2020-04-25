@@ -65,7 +65,7 @@ def handle_call(data):
         #error
     print(data['amount'])
     current_player.bet(data['amount'])
-    emit('withdraw', {'username':current_player.name, 'amount': current_player.current_contribution},
+    emit('withdraw', {'username':current_player.name, 'amount': data['amount']},
         broadcast=True)
     if current_player.bank == current_player.invested:
         number_of_all_ins+=1
@@ -135,10 +135,10 @@ def run_next_game_state(next_game_state):
     print('RUN_NEXT_GAME_STATE')
     print(next_game_state.value)
     game_state = next_game_state
+    emit('reset current contribution', {'amount': 0}, broadcast=True)
     for player in players:
         # emit('withdraw', {'amount': player.current_contribution},
         # room=clients[player.name])
-        emit('current contribution', {'amount': 0}, broadcast=True)
         player.current_contribution = None
     highest_current_contribution = 0
     pot += current_round_pot
@@ -250,11 +250,11 @@ def find_winners(all_players):
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', {'best_hand': str(best_hands[0])},room=clients[players[0].name])
+    emit('best hand', best_hands[0].serialize() ,room=clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', {'best_hand': str(best_hands[i])},room=clients[players[i].name])
+        emit('best hand', best_hands[i].serialize() ,room=clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -326,6 +326,8 @@ def assign_one_winner():
 def apply_result_to_all():
     global players
     for p in players:
+        status = 'win' if p.result > 0 else 'lose' 
+        emit('result', {'status': status, 'amount': p.result}, room=clients[p.name])
         p.apply_result()
 
 def current_hand_strength(player, community_cards):
