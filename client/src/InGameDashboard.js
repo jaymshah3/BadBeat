@@ -138,29 +138,6 @@ class InGameDashboard extends Component {
         socket.on('best hand', (data) => {
             this.setState({currentHand: data});
         });
-
-        socket.on('result', (data) => {
-            this.setState(state => {
-                const newList = []
-                const currentPlayers = state['currentPlayers'];
-                for (let i = 0; i < currentPlayers.length; i++) {
-                    let newObj = {};
-                    newObj['username'] = currentPlayers[i]['username'];
-                    newObj['latestAction'] = '';
-                    newObj['currentContribution'] = 0;
-                    newObj['bank'] = currentPlayers[i]['bank'] + data['amount']
-                    
-                    newList.push(newObj);
-                }
-
-                return {
-                    highestCurrentContribution: 0,
-                    currentPlayers: newList,
-                    result: data['status'],
-                    winnings: data['amount']
-                }
-            });
-        });
     }
 
     getMyCurrentContribution() {
