@@ -102,11 +102,15 @@ def handle_raise(data):
     if current_player.current_contribution is not None:
         current_round_pot += data['amount']-current_player.current_contribution
         current_player.bet(data['amount']-current_player.current_contribution)
-        emit('withdraw', {'username':current_player.name, 'amount': current_player.current_contribution},
+        emit('withdraw', {'username':current_player.name, 
+        'amount': data['amount']-current_player.current_contribution},
         broadcast=True)
     else:
         current_player.bet(data['amount'])
         current_round_pot += data['amount']
+        emit('withdraw', {'username':current_player.name, 
+        'amount': current_player.current_contribution},
+        broadcast=True)
     highest_current_contribution = current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
     if current_player.bank == current_player.invested:
