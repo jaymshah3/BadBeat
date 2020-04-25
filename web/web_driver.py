@@ -59,10 +59,16 @@ def handle_call(data):
     global current_round_pot
     global number_of_all_ins
     global pot
+    global big_blind_action
     print("CALL")
     if data['username'] is not current_player.name:
         pass
         #error
+    if (game_state == GameState.PREFLOP 
+    and current_player == player_round.big_blind.player):
+        print('changed big blind action')
+        big_blind_action = True
+    print(big_blind_action)
     print(data['amount'])
     current_player.bet(data['amount'])
     emit('withdraw', {'username':current_player.name, 'amount':data['amount']},
@@ -99,7 +105,9 @@ def handle_raise(data):
         #error
     if (game_state == GameState.PREFLOP 
     and current_player == player_round.big_blind.player):
+        print('changed big blind action')
         big_blind_action = True
+    print(big_blind_action)
     aggressors.append(current_player)
     prev_high_raise = highest_current_contribution
     # on raise, the amount is the final amount the player wants to be "in" for,
@@ -357,7 +365,7 @@ def get_options():
     print(current_player.name)
     print(current_player.current_contribution)
     print(highest_current_contribution)
-    print(number_of_all_ins >= player_round.length-1)
+    print(big_blind_action)
     if player_round.length == 1:
         distribute()
     else:
@@ -370,11 +378,11 @@ def get_options():
         else:
             options = []
             options.append("fold")
-            if ((current_player.current_contribution is None or 
-            current_player.current_contribution < highest_current_contribution 
+            if (((current_player.current_contribution is None or 
+            current_player.current_contribution < highest_current_contribution) 
+            and highest_current_contribution != 0) 
             or (player_round.big_blind.player == current_player and 
-            game_state == GameState.PREFLOP)) and
-            highest_current_contribution != 0):
+            game_state == GameState.PREFLOP)):
                 options.append("raise")
             if ((current_player.current_contribution is None 
             or current_player.current_contribution < highest_current_contribution) 
