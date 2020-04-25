@@ -3,7 +3,6 @@ from core.poker_round import Round
 from core.player import Player
 from core.hand import Hand
 from enum import Enum
-from random import randint
 import itertools
 try:
     from __main__ import socketio, join_room, leave_room, send, emit
@@ -32,6 +31,7 @@ current_player = None
 game_state = GameState.PREFLOP
 prev_high_rase = 0
 number_of_all_ins = 0
+big_blind_action = False
 aggressors = []
 
 
@@ -65,7 +65,7 @@ def handle_call(data):
         #error
     print(data['amount'])
     current_player.bet(data['amount'])
-    emit('withdraw', {'username':current_player.name, 'amount': data['amount']},
+    emit('withdraw', {'username':current_player.name, 'amount':data['amount']},
         broadcast=True)
     if current_player.bank == current_player.invested:
         number_of_all_ins+=1
@@ -91,20 +91,27 @@ def handle_raise(data):
     global prev_high_raise
     global aggressors
     global number_of_all_ins
+    global game_state
+    global big_blind_action
     print("RAISE")
     if data['username'] is not current_player.name:
         pass
         #error
+    if (game_state == GameState.PREFLOP 
+    and current_player == player_round.big_blind.player):
+        big_blind_action = True
     aggressors.append(current_player)
     prev_high_raise = highest_current_contribution
     # on raise, the amount is the final amount the player wants to be "in" for,
     # not how much more they want to add to there contribution.
     if current_player.current_contribution is not None:
+        print('raised from not none')
+        print(data['amount'])
         current_round_pot += data['amount']-current_player.current_contribution
-        current_player.bet(data['amount']-current_player.current_contribution)
         emit('withdraw', {'username':current_player.name, 
         'amount': data['amount']-current_player.current_contribution},
         broadcast=True)
+        current_player.bet(data['amount']-current_player.current_contribution)
     else:
         current_player.bet(data['amount'])
         current_round_pot += data['amount']
@@ -135,10 +142,10 @@ def run_next_game_state(next_game_state):
     print('RUN_NEXT_GAME_STATE')
     print(next_game_state.value)
     game_state = next_game_state
-    emit('reset current contribution', {'amount': 0}, broadcast=True)
     for player in players:
         # emit('withdraw', {'amount': player.current_contribution},
         # room=clients[player.name])
+        emit('current contribution', {'amount': 0}, broadcast=True)
         player.current_contribution = None
     highest_current_contribution = 0
     pot += current_round_pot
@@ -250,11 +257,11 @@ def find_winners(all_players):
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', best_hands[0].serialize() ,room=clients[players[0].name])
+    emit('best hand', {'best_hand': str(best_hands[0])},room=clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', best_hands[i].serialize() ,room=clients[players[i].name])
+        emit('best hand', {'best_hand': str(best_hands[i])},room=clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -326,13 +333,11 @@ def assign_one_winner():
 def apply_result_to_all():
     global players
     for p in players:
-        status = 'win' if p.result > 0 else 'lose' 
-        emit('result', {'status': status, 'amount': p.result}, room=clients[p.name])
         p.apply_result()
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand',best_hand.serialize(),room=clients[player.name])
+    emit('current hand',{'hand': str(best_hand)},room=clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
@@ -347,6 +352,7 @@ def get_options():
     global highest_current_contribution
     global game_state
     global number_of_all_ins
+    global big_blind_action
     print("GET OPTIONS")
     print(current_player.name)
     print(current_player.current_contribution)
@@ -357,8 +363,7 @@ def get_options():
     else:
         if (number_of_all_ins >= player_round.length-1 or ((current_player.current_contribution is not None) 
         and (current_player.current_contribution == highest_current_contribution) 
-        and not (player_round.big_blind.player == current_player and 
-        game_state == GameState.PREFLOP))):
+        and (big_blind_action))):
             if game_state != GameState.WINNER:
                 game_state = GameState(game_state.value+1)
             run_next_game_state(game_state)
@@ -421,5 +426,5 @@ def broadcast_community_cards():
     global community_cards
     cards = []
     for c in community_cards:
-         cards.append(c.serialize())
+        cards.append(c.serialize())
     emit('community cards', {'community_cards': cards}, broadcast=True)
