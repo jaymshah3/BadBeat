@@ -339,7 +339,12 @@ def apply_result_to_all():
     for p in players:
         if p.result < 0:
             winnings = 0
-        emit('winners', {'username':p.name,'winnings':winnings,'hand':[p.cards[0].serialize,p.cards[1].serialize]})
+        else:
+            winnings = p.result
+        emit('winners', 
+        {'username':p.name,'winnings':winnings,
+        'hand':[p.cards[0].serialize,p.cards[1].serialize]},
+         broadast=True)
         p.apply_result()
 
 def current_hand_strength(player, community_cards):
