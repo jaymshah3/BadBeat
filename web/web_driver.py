@@ -344,7 +344,8 @@ def apply_result_to_all():
         win_objects[p.name] = {
             'username': p.name,
             'winnings': p.result if p.result > 0 else 0,
-            'hand':[p.cards[0].serialize(), p.cards[1].serialize()]
+            'hand':[p.cards[0].serialize(), p.cards[1].serialize()],
+            'final_bank': p.bank,
         }
     emit('result', win_objects, broadcast=True)
 
