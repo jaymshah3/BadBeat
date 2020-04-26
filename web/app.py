@@ -1,8 +1,8 @@
 from threading import Lock
 from flask import Flask, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from GameDataService import GameDataService
-
+from web.GameDataService import GameDataService, GameData
+import uuid
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
@@ -10,12 +10,28 @@ socketio = SocketIO()
 socketio.init_app(app, cors_allowed_origins='*')
 
 clients = {}
-memory = GameDataService()
+room_to_gds = GameDataService()
 active_clients = 0
 room_owner = -1
 has_game_started = False
 lock = Lock()
     
+@socketio.on('create room')
+def create_room(data):
+    global room_to_gds
+    unique_room_number = uuid.uuid4()
+    username = data['username']
+    bank = data['bank']
+    small_blind = data['small_blind']
+    big_blind = data['big_blind']
+    game_data = GameData()
+    game_data.room_owner = request.sid
+    game_data.clients[username] = request.sid
+    game_data.active_clients += 1
+    emit('owner', {}, room=room_owner)
+    game_data.add_player(username,active_clients,bank)
+    room_to_gds.add_game_data(unique_room_number,game_data)
+
 @socketio.on('request to join')
 def request_to_join(data):
     global clients
