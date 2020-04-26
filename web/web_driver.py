@@ -149,8 +149,10 @@ def run_next_game_state(next_game_state):
     for player in players:
         # emit('withdraw', {'amount': player.current_contribution},
         # room=clients[player.name])
-        emit('current contribution', {'amount': 0}, broadcast=True)
         player.current_contribution = None
+
+    emit('reset current contribution', {}, broadcast=True)
+
     highest_current_contribution = 0
     pot += current_round_pot
     broadcast_pot(pot)
@@ -261,11 +263,11 @@ def find_winners(all_players):
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', {'best_hand': str(best_hands[0])},room=clients[players[0].name])
+    emit('best hand', best_hands[0].serialize(),room=clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', {'best_hand': str(best_hands[i])},room=clients[players[i].name])
+        emit('best hand', best_hands[i].serialize(),room=clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -327,7 +329,7 @@ def distribute():
 def assign_one_winner():
     global players
     global player_round
-    winner = player_round.get_next_player()
+    winner = player_round.get_next_player().player
     for p in players:
         if p != winner:
             p.result = -p.invested
@@ -336,16 +338,19 @@ def assign_one_winner():
 
 def apply_result_to_all():
     global players
+    win_objects = {}
     for p in players:
-        emit('winners', 
-        {'username':p.name,'winnings': p.result if p.result > 0 else 0,
-        'hand':[p.cards[0].serialize,p.cards[1].serialize]},
-         broadast=True)
         p.apply_result()
+        win_objects[p.name] = {
+            'username': p.name,
+            'winnings': p.result if p.result > 0 else 0,
+            'hand':[p.cards[0].serialize(), p.cards[1].serialize()]
+        }
+    emit('result', win_objects, broadcast=True)
 
 def current_hand_strength(player, community_cards):
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand',{'hand': str(best_hand)},room=clients[player.name])
+    emit('current hand',best_hand.serialize(),room=clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]

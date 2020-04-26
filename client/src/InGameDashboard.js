@@ -25,8 +25,8 @@ class InGameDashboard extends Component {
             currentPlayers: newList,
             pot: 0,
             showRaiseDialog: false,
-            result: '',
-            winnings: 0
+            winnings: 0,
+            winners: [] 
         }
     }
 
@@ -138,6 +138,35 @@ class InGameDashboard extends Component {
         socket.on('best hand', (data) => {
             this.setState({currentHand: data});
         });
+
+        socket.on('result', (data) => {
+            this.setState(state => {
+                const newList = []
+                let winners = []
+                let winnings = 0;
+                const currentPlayers = state['currentPlayers'];
+                for (let i = 0; i < currentPlayers.length; i++) {
+                    let newObj = {};
+                    const resultObj = data[currentPlayers[i]['username']]
+                    newObj['username'] = currentPlayers[i]['username'];
+                    newObj['latestAction'] = currentPlayers[i]['action'];
+                    newObj['currentContribution'] = currentPlayers[i]['currentContribution'];
+                    newObj['bank'] = resultObj['final_bank']
+                    if (username == currentPlayers[i]['username']) {
+                        winnings = resultObj['winnings']
+                    }
+                    if (resultObj['winnings'] > 0) {
+                        winners.push(resultObj);
+                    }
+                    newList.push(newObj);
+                }
+                return {
+                    currentPlayers: newList,
+                    winners: winners,
+                    winnings: winnings
+                }
+            });
+        });
     }
 
     getMyCurrentContribution() {
@@ -163,14 +192,16 @@ class InGameDashboard extends Component {
     }
 
     showWinOrLoss() {
-        const { result, winnings } = this.state;
-        let amount = Math.abs(winnings);
-        if (result == "") {
+        const { winners } = this.state;
+        if (winners.length == 0) {
             return null;
-        } else if (result == 'win') {
-            return <h3>You won {amount}!</h3>
         } else {
-            return <h3>You lost {amount}.</h3>
+            return <List>
+                        {winners.map(x => <ListItem key={x['username']}>
+                            <p>{x['username'] + ' ' + x['winnings'] + ' ' + x['hand'][0]['value'] + " of " + x['hand'][0]['suit'] + ', ' + x['hand'][1]['value'] + " of " + x['hand'][1]['suit']}</p>
+                        </ListItem>)}
+                    </List>
+                    
         }
     }
 
