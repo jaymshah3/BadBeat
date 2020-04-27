@@ -3,6 +3,8 @@ from core.poker_round import Round
 from core.player import Player
 from core.hand import Hand
 from enum import Enum
+import GameDataService
+
 import itertools
 try:
     from __main__ import socketio, join_room, leave_room, send, emit
@@ -33,7 +35,7 @@ prev_high_rase = 0
 number_of_all_ins = 0
 big_blind_action = False
 aggressors = []
-
+room_to_gds = GameDataService.room_to_gds
 
 @socketio.on('fold')
 def handle_fold(data):
@@ -165,7 +167,7 @@ def run_next_game_state(next_game_state):
         else:
             distribute()
 
-def preflop(given_players,given_clients,small_blind_amt,big_blind_amt):
+def preflop(room,given_players,given_clients,small_blind_amt,big_blind_amt):
     global players
     global clients
     global player_round

@@ -1,7 +1,7 @@
 from threading import Lock
 from flask import Flask, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
-from web.GameDataService import GameDataService, GameData
+import GameDataService
 import uuid
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -9,10 +9,8 @@ app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO()
 socketio.init_app(app, cors_allowed_origins='*')
 
-clients = {}
-room_to_gds = GameDataService()
-active_clients = 0
-room_owner = -1
+GameDataService.init_gds()
+room_to_gds = GameDataService.room_to_gds
 has_game_started = False
 lock = Lock()
     
@@ -27,12 +25,12 @@ def create_room(data):
     bank = data['bank']
     small_blind = data['small_blind']
     big_blind = data['big_blind']
-    game_data = GameData()
+    game_data = GameDataService.GameData()
     game_data.room_owner = request.sid
     game_data.clients[username] = request.sid
     game_data.active_clients += 1
-    emit('owner', {}, room=room_owner)
-    game_data.add_player(username,active_clients,int(bank))
+    emit('owner', {}, room=game_data.room_owner)
+    game_data.add_player(username,game_data.active_clients,int(bank))
     room_to_gds.add_game_data(unique_room_number,game_data)
 
 @socketio.on('request to join')
@@ -88,7 +86,7 @@ def on_start(data):
     game_data = room_to_gds.get_game_data(room)
     has_game_started = True
     emit('game start', {'message': "Game has started"}, room=room)
-    preflop(game_data.get_players(), game_data.clients, game_data.small_blind, game_data.big_blind)
+    preflop(room,game_data.get_players(), game_data.clients, game_data.small_blind, game_data.big_blind)
     
 
 def change_active_clients(increment):

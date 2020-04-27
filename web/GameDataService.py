@@ -2,10 +2,16 @@ from core.player import Player
 from core.deck import Deck
 from enum import Enum
 
+room_to_gds = None
+def init_gds():
+    global room_to_gds
+    room_to_gds = GameDataService()
+
 
 class GameDataService():
     def __init__(self): 
         self.gds_map = {}
+
     def add_game_data(self,room_id,game_data):
         if room_id not in self.gds_map.keys():
             self.gds_map[room_id] = game_data
