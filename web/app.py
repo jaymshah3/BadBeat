@@ -19,7 +19,10 @@ lock = Lock()
 @socketio.on('create room')
 def create_room(data):
     global room_to_gds
-    unique_room_number = uuid.uuid4()
+    lock.acquire()
+    unique_id= uuid.uuid4()
+    lock.release()
+    unique_room_number = unique_id.int
     username = data['username']
     bank = data['bank']
     small_blind = data['small_blind']
@@ -29,59 +32,51 @@ def create_room(data):
     game_data.clients[username] = request.sid
     game_data.active_clients += 1
     emit('owner', {}, room=room_owner)
-    game_data.add_player(username,active_clients,bank)
+    game_data.add_player(username,active_clients,int(bank))
     room_to_gds.add_game_data(unique_room_number,game_data)
 
 @socketio.on('request to join')
 def request_to_join(data):
-    global clients
-    global active_clients
-    global room_owner
     username = data['username']
     room = data['room']
-    lock.acquire()
+    game_data = room_to_gds.get_game_data(room)
+    clients = game_data.clients
     if not clients.get(username,False):
         clients[username] = request.sid
+        emit('join request', data, room =room_owner)
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
-    lock.release()
     join_room(room)
     #send(username + ' has entered the room.', room=room)
-    if active_clients == 0:
-        room_owner = request.sid
-        emit('owner', {'message': "you are owner"}, room=room_owner)
-        change_active_clients(1)
-    if request.sid == room_owner:
-        memory.add_player(data['username'],active_clients,data['bank'])
-    else:
-        emit('join request', data, room =room_owner)
+    
 
 @socketio.on('handle join request')
 def handle_join_request(data):
-    global memory
-    global active_clients
+    room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     if data['approve']:
         print('success: ' + str(data['room']))
-        emit("user joined", data,
-         room=data['room'])
-        change_active_clients(1)
-        memory.add_player(data['username'],active_clients,int(data['bank']))
+        emit("user joined", data, room=data['room'])
+        game_data.active_clients += 1
+        game_data.add_player(data['username'],game_data.active_clients,int(data['bank']))
     emit('request response', data, room=clients[data['username']])
 
 @socketio.on('list users')
 def list_users(data):
+    room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     emit('user list', {'players': list(map(lambda p: {
         'username': p.name, 
         'bank': p.bank
-    }, memory.get_players()))},room=data['room'])
+    }, game_data.get_players()))},room=room)
 
 @socketio.on('leave')
 def on_leave(data):
-    global clients
     username = data['username']
     room = data['room']
-    del clients[username]
-    change_active_clients(-1)
+    game_data = room_to_gds.get_game_data(room)
+    del game_data.clients[username]
+    game_data.active_clients =- 1
     leave_room(room)
     send(username + ' has left the room.', room=room)
 
@@ -89,11 +84,11 @@ def on_leave(data):
 def on_start(data):
     print('got start')
     global has_game_started
-    global memory
     room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     has_game_started = True
     emit('game start', {'message': "Game has started"}, room=room)
-    preflop(memory.get_players(), clients, data['small_blind'], data['big_blind'])
+    preflop(game_data.get_players(), game_data.clients, game_data.small_blind, game_data.big_blind)
     
 
 def change_active_clients(increment):

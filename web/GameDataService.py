@@ -62,3 +62,17 @@ class GameData():
 
     def get_players(self):
         return self.players
+
+    def reset(self):
+        self.heads_up = False
+        self.pot = 0
+        self.current_round_pot = 0
+        self.deck = Deck()
+        self.highest_current_contribution = 0
+        self.community_cards = []
+        self.player_round = None
+        self.current_player = None
+        self.game_state = GameState.PREFLOP
+        self.prev_high_rase = 0
+        self.number_of_all_ins = 0
+        self.aggressors = []
