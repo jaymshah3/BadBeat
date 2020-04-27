@@ -55,6 +55,7 @@ class GameData():
         self.prev_high_rase = 0
         self.number_of_all_ins = 0
         self.aggressors = []
+        self.big_blind_action = False
         self.room_owner = None
         self.active_clients = 0
 
@@ -81,4 +82,5 @@ class GameData():
         self.game_state = GameState.PREFLOP
         self.prev_high_rase = 0
         self.number_of_all_ins = 0
+        self.big_blind_action = False
         self.aggressors = []

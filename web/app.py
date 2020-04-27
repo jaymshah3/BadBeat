@@ -29,7 +29,7 @@ def create_room(data):
     game_data.room_owner = request.sid
     game_data.clients[username] = request.sid
     game_data.active_clients += 1
-    emit('owner', {}, room=game_data.room_owner)
+    emit('owner', {"room":unique_room_number}, room=game_data.room_owner)
     game_data.add_player(username,game_data.active_clients,int(bank))
     room_to_gds.add_game_data(unique_room_number,game_data)
 
@@ -38,10 +38,9 @@ def request_to_join(data):
     username = data['username']
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
-    clients = game_data.clients
-    if not clients.get(username,False):
-        clients[username] = request.sid
-        emit('join request', data, room =room_owner)
+    if not game_data.clients.get(username,False):
+        game_data.clients[username] = request.sid
+        emit('join request', data, room =game_data.room_owner)
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
     join_room(room)
@@ -57,7 +56,7 @@ def handle_join_request(data):
         emit("user joined", data, room=data['room'])
         game_data.active_clients += 1
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']))
-    emit('request response', data, room=clients[data['username']])
+    emit('request response', data, room=game_data.clients[data['username']])
 
 @socketio.on('list users')
 def list_users(data):
@@ -88,12 +87,6 @@ def on_start(data):
     emit('game start', {'message': "Game has started"}, room=room)
     preflop(room,game_data.get_players(), game_data.clients, game_data.small_blind, game_data.big_blind)
     
-
-def change_active_clients(increment):
-    global active_clients
-    lock.acquire()
-    active_clients+=increment
-    lock.release()
 
 from web_driver import preflop
 if __name__ == '__main__':
