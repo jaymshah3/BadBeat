@@ -37,11 +37,19 @@ big_blind_action = False
 aggressors = []
 room_to_gds = GameDataService.room_to_gds
 
+
+def decorator_action(function):
+    def handle_action(data):
+        global room_to_gds
+        room = data['room']
+        game_data = room_to_gds.get_game_data(room)
+        function(data,game_data)
+    return handle_action
+
+@decorator_action
 @socketio.on('fold')
-def handle_fold(data):
-    global room_to_gds
+def handle_fold(data,game_data):
     room = data['room']
-    game_data = room_to_gds.get_game_data(room)
     current_player = game_data.current_player
     print("FOLD")
     if data['username'] is not current_player.name:
@@ -53,12 +61,11 @@ def handle_fold(data):
     game_data.current_player = game_data.player_round.get_next_player().player
     get_options(room)
 
+@decorator_action
 @socketio.on('call')
-def handle_call(data):
+def handle_call(data,game_data):
     print("CALL")
-    global room_to_gds
     room = data['room']
-    game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -68,7 +75,7 @@ def handle_call(data):
     print(data['amount'])
     game_data.current_player.bet(data['amount'])
     emit('withdraw', {'username':current_player.name, 'amount':data['amount']},
-        broadcast=True)
+        room=room)
     if game_data.current_player.bank == game_data.current_player.invested:
         game_data.number_of_all_ins+=1
         game_data.player_round.all_in_current_node()
@@ -82,12 +89,11 @@ def handle_call(data):
     game_data.current_player = game_data.player_round.current_node.player
     get_options(room)
         
+@decorator_action
 @socketio.on('raise')
-def handle_raise(data):
+def handle_raise(data,game_data):
     print("RAISE")
-    global room_to_gds
     room = data['room']
-    game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -102,7 +108,7 @@ def handle_raise(data):
         print('raised from not none')
         print(data['amount'])
         game_data.current_round_pot += data['amount']-game_data.current_player.current_contribution
-        emit('withdraw', {'username':gme_data.current_player.name, 
+        emit('withdraw', {'username':game_data.current_player.name, 
         'amount': data['amount']-game_data.current_player.current_contribution},
         broadcast=True)
         game_data.current_player.bet(data['amount']-current_player.current_contribution)
