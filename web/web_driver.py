@@ -110,7 +110,7 @@ def handle_raise(data,game_data):
         game_data.current_round_pot += data['amount']-game_data.current_player.current_contribution
         emit('withdraw', {'username':game_data.current_player.name, 
         'amount': data['amount']-game_data.current_player.current_contribution},
-        broadcast=True)
+        room=room)
         game_data.current_player.bet(data['amount']-current_player.current_contribution)
     else:
         game_data.current_player.bet(data['amount'])
@@ -154,33 +154,33 @@ def run_next_game_state(room):
         else:
             distribute(room)
 
-def preflop(room,given_players,given_clients,small_blind_amt,big_blind_amt):
+def preflop(room):
     print('PREFLOP')
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    game_data.player_round = Round(given_players,0)
-    game_data.highest_current_contribution = big_blind_amount
-    game_data.player_round.small_blind.player.bet(small_blind_amount)
+    game_data.player_round = Round(game_data.get_players(),0)
+    game_data.highest_current_contribution = game_data.big_blind_amount
+    game_data.player_round.small_blind.player.bet(game_data.small_blind_amount)
     emit('withdraw', {'username':game_data.player_round.small_blind.player.name,
      'amount': game_data.player_round.small_blind.player.current_contribution},
-        broadcast=True)
+        room=room)
     if game_data.player_round.small_blind.player.invested == game_data.player_round.small_blind.player.bank:
         print('incrementing all_ins')
-        game_data.player_round.small_blind.isAllIn = True
+        game_data.player_round.small_blind.is_all_in = True
         game_data.number_of_all_ins+=1
     emit('player action', {
         'username': game_data.player_round.small_blind.player.name,
         'amount': game_data.small_blind_amount,
         'action': 'small blind',
-        'currentContribution': small_blind_amount
-    }, broadcast=True)
-    game_data.player_round.big_blind.player.bet(big_blind_amount)
+        'currentContribution': game_data.small_blind_amount
+    }, room=room)
+    game_data.player_round.big_blind.player.bet(game_data.big_blind_amount)
     emit('withdraw', {'username':game_data.player_round.big_blind.player.name,
      'amount': game_data.player_round.big_blind.player.current_contribution},
-        broadcast=True)
+        room=room)
     if game_data.player_round.big_blind.player.invested == game_data.player_round.big_blind.player.bank:
         print('incrementing all_ins')
-        game_data.player_round.big_blind.isAllIn = True
+        game_data.player_round.big_blind.is_all_in = True
         game_data.number_of_all_ins+=1
     game_data.current_round_pot += game_data.player_round.small_blind.player.current_contribution
     game_data.current_round_pot += game_data.player_round.big_blind.player.current_contribution
@@ -193,11 +193,12 @@ def preflop(room,given_players,given_clients,small_blind_amt,big_blind_amt):
         'amount': game_data.big_blind_amount,
         'action': 'big blind',
         'currentContribution': game_data.big_blind_amount
-    }, broadcast=True)
+    }, room=room)
     broadcast_pot(game_data.current_round_pot,room)
-    emit('highest contribution', {'highest_contribution': big_blind_amount}, broadcast=True)
+    emit('highest contribution', {'highest_contribution': big_blind_amount}, room=room)
     deal_cards(room)
     get_options(room) 
+
 def run_street(heads_up,room):
     print('Game State:' + str(game_state))
     global room_to_gds

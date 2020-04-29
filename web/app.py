@@ -25,22 +25,19 @@ def create_room(data):
     bank = data['bank']
     small_blind = data['small_blind']
     big_blind = data['big_blind']
-    game_data = GameDataService.GameData()
-    game_data.room_owner = request.sid
-    game_data.clients[username] = request.sid
-    game_data.active_clients += 1
+    game_data = GameDataService.GameData(request.sid,small_blind,big_blind)
     emit('owner', {"room":unique_room_number}, room=game_data.room_owner)
-    game_data.add_player(username,game_data.active_clients,int(bank))
+    game_data.add_player(username,game_data.active_clients,int(bank),request.sid)
     room_to_gds.add_game_data(unique_room_number,game_data)
 
 @socketio.on('request to join')
 def request_to_join(data):
     username = data['username']
     room = data['room']
+    data['request_sid'] = request.sid
     game_data = room_to_gds.get_game_data(room)
     if not game_data.clients.get(username,False):
-        game_data.clients[username] = request.sid
-        emit('join request', data, room =game_data.room_owner)
+        emit('join request', data, room=game_data.room_owner)
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
     join_room(room)
@@ -54,8 +51,7 @@ def handle_join_request(data):
     if data['approve']:
         print('success: ' + str(data['room']))
         emit("user joined", data, room=data['room'])
-        game_data.active_clients += 1
-        game_data.add_player(data['username'],game_data.active_clients,int(data['bank']))
+        game_data.add_player(data['username'],game_data.active_clients,int(data['bank'],data['request_sid']))
     emit('request response', data, room=game_data.clients[data['username']])
 
 @socketio.on('list users')
@@ -71,9 +67,9 @@ def list_users(data):
 def on_leave(data):
     username = data['username']
     room = data['room']
+    id_num = data['id_num']
     game_data = room_to_gds.get_game_data(room)
-    del game_data.clients[username]
-    game_data.active_clients =- 1
+    game_data.remove_player(id_num,username)
     leave_room(room)
     send(username + ' has left the room.', room=room)
 
@@ -85,7 +81,7 @@ def on_start(data):
     game_data = room_to_gds.get_game_data(room)
     has_game_started = True
     emit('game start', {'message': "Game has started"}, room=room)
-    preflop(room,game_data.get_players(), game_data.clients, game_data.small_blind, game_data.big_blind)
+    preflop(room)
     
 
 from web_driver import preflop

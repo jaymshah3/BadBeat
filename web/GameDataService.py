@@ -38,7 +38,7 @@ class GameState(Enum):
     WINNER = 5
 
 class GameData():
-    def __init__(self):
+    def __init__(self,room_owner_sid,small_blind,big_blind):
         self.players = []
         self.heads_up = False
         self.pot = 0
@@ -48,24 +48,28 @@ class GameData():
         self.clients = {}
         self.community_cards = []
         self.player_round = None
-        self.small_blind_amount = 0
-        self.big_blind_amount = 0
+        self.small_blind_amount = small_blind
+        self.big_blind_amount = big_blind
         self.current_player = None
         self.game_state = GameState.PREFLOP
         self.prev_high_rase = 0
         self.number_of_all_ins = 0
         self.aggressors = []
         self.big_blind_action = False
-        self.room_owner = None
+        self.room_owner = room_owner_sid
         self.active_clients = 0
 
-    def add_player(self,name,id_num,bank):
+    def add_player(self,name,id_num,bank,sid):
         self.players.append(Player(name,bank,id_num))
+        self.clients[name] = sid
+        self.active_clients += 1
 
-    def remove_player(self,id_num):
+    def remove_player(self,id_num,username):
         for i in range(0,len(self.players)):
             if self.players[i].id_num == id_num:
                 self.players.pop(i)
+        del self.clients[username]
+        self.active_clients -= 1
 
     def get_players(self):
         return self.players
