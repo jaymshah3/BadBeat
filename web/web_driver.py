@@ -342,9 +342,6 @@ def get_options(room):
     print(game_data.current_player.name)
     print(game_data.current_player.current_contribution)
     print(game_data.highest_current_contribution)
-    print(game_data.player_round.big_blind.player == game_data.current_player)
-    print(game_data.game_state == GameDataService.GameState.PREFLOP)
-    print(game_data.player_round.big_blind.player.name)
     print(game_data.game_state)
     if game_data.player_round.length == 1:
         distribute(room)
@@ -369,12 +366,10 @@ def get_options(room):
             or game_data.current_player.current_contribution < game_data.highest_current_contribution) 
             and game_data.highest_current_contribution != 0):  
                 options.append("call")
-            if (game_data.highest_current_contribution == 0 or 
-            (game_data.player_round.big_blind.player == game_data.current_player and 
-            game_data.game_state == GameDataService.GameState.PREFLOP)):
+            if "call" not in options:
                 options.append("check")
-                if "raise" not in options:
-                    options.append("bet")
+            if "raise" not in options:
+                options.append("bet")
             for opt in options:
                 print(opt)
             emit('options for player', {'options': options, 
