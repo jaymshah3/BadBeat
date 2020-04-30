@@ -11,14 +11,10 @@ try:
 except ImportError:
     from flask_socketio import socketio, join_room, leave_room, send, emit
 
-class GameState(Enum):
-    PREFLOP = 1
-    FLOP = 2
-    TURN = 3
-    RIVER = 4
-    WINNER = 5
 
-players = []
+room_to_gds = GameDataService.room_to_gds
+
+'''players = []
 heads_up = False
 pot = 0
 current_round_pot = 0
@@ -35,8 +31,7 @@ prev_high_rase = 0
 number_of_all_ins = 0
 big_blind_action = False
 aggressors = []
-room_to_gds = GameDataService.room_to_gds
-
+'''
 
 # def decorator_action(function):
 #     def handle_action(data):
@@ -71,24 +66,23 @@ def handle_call(data):
     if data['username'] is not game_data.current_player.name:
         pass
         #error
-    if (game_data.game_state == GameState.PREFLOP 
+    if (game_data.game_state == GameDataService.GameState.PREFLOP 
     and game_data.current_player == game_data.player_round.big_blind.player):
         game_data.big_blind_action = True
     print(data['amount'])
     game_data.current_player.bet(data['amount'])
-    emit('withdraw', {'username':current_player.name, 'amount':data['amount']},
+    emit('withdraw', {'username':game_data.current_player.name, 'amount':data['amount']},
         room=room)
     if game_data.current_player.bank == game_data.current_player.invested:
         game_data.number_of_all_ins+=1
         game_data.player_round.all_in_current_node()
     game_data.current_round_pot += data['amount']
-    broadcast_pot(current_round_pot + pot,room)
+    broadcast_pot(game_data.current_round_pot + game_data.pot,room)
     data['action'] = 'call'
     data['currentContribution'] = game_data.current_player.current_contribution
     emit('player action', data, room=room)
-    print(current_player.name)
-    print(player_round.get_next_player().player)
-    game_data.current_player = game_data.player_round.current_node.player
+    print(game_data.current_player.name)
+    game_data.current_player = game_data.player_round.get_next_player().player
     get_options(room)
         
 @socketio.on('raise')
@@ -100,11 +94,11 @@ def handle_raise(data):
     if data['username'] is not game_data.current_player.name:
         pass
         #error
-    if (game_data.game_state == GameState.PREFLOP 
+    if (game_data.game_state == GameDataService.GameState.PREFLOP 
     and game_data.current_player == game_data.player_round.big_blind.player):
         game_data.big_blind_action = True
-    game_data.aggressors.append(current_player)
-    game_data.prev_high_raise = highest_current_contribution
+    game_data.aggressors.append(game_data.current_player)
+    game_data.prev_high_raise = game_data.highest_current_contribution
     # on raise, the amount is the final amount the player wants to be "in" for,
     # not how much more they want to add to there contribution.
     if game_data.current_player.current_contribution is not None:
@@ -114,7 +108,7 @@ def handle_raise(data):
         emit('withdraw', {'username':game_data.current_player.name, 
         'amount': data['amount']-game_data.current_player.current_contribution},
         room=room)
-        game_data.current_player.bet(data['amount']-current_player.current_contribution)
+        game_data.current_player.bet(data['amount']-game_data.current_player.current_contribution)
     else:
         game_data.current_player.bet(data['amount'])
         game_data.current_round_pot += data['amount']
@@ -126,7 +120,7 @@ def handle_raise(data):
     if game_data.current_player.bank == game_data.current_player.invested:
         game_data.number_of_all_ins+=1
         game_data.player_round.all_in_current_node()
-    broadcast_pot(current_round_pot + pot,room)
+    broadcast_pot(game_data.current_round_pot + game_data.pot,room)
     data['action'] = 'raise'
     data['currentContribution'] = game_data.current_player.current_contribution
     emit('highest contribution', {'highest_contribution': game_data.highest_current_contribution}, room=room)
@@ -147,13 +141,13 @@ def run_next_game_state(room):
     emit('reset current contribution', {}, room=room)
     game_data.highest_current_contribution = 0
     game_data.pot += game_data.current_round_pot
-    broadcast_pot(pot,room)
+    broadcast_pot(game_data.pot,room)
     game_data.current_round_pot = 0
     if game_data.player_round.length == 1:
         distribute(room)
     else:
-        if next_game_state != GameState.WINNER:
-            run_street(heads_up,room)
+        if next_game_state != GameDataService.GameState.WINNER:
+            run_street(game_data.heads_up,room)
         else:
             distribute(room)
 
@@ -198,15 +192,16 @@ def preflop(room):
         'currentContribution': game_data.big_blind_amount
     }, room=room)
     broadcast_pot(game_data.current_round_pot,room)
-    emit('highest contribution', {'highest_contribution': big_blind_amount}, room=room)
+    emit('highest contribution', {'highest_contribution': game_data.big_blind_amount}, room=room)
     deal_cards(room)
     get_options(room) 
 
 def run_street(heads_up,room):
-    print('Game State:' + str(game_state))
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    if game_data.game_state == GameState.FLOP:
+    print('Game State:' + str(game_data.game_state))
+
+    if game_data.game_state == GameDataService.GameState.FLOP:
         game_data.community_cards = [
             game_data.deck.get_top_card(),
             game_data.deck.get_top_card(),
@@ -216,35 +211,35 @@ def run_street(heads_up,room):
         game_data.community_cards.append(game_data.deck.get_top_card())
     broadcast_community_cards(room)
     for player in game_data.player_round.get_current_players():
-        current_hand_strength(player,community_cards)
+        current_hand_strength(player,game_data.community_cards,room)
     if game_data.number_of_all_ins >= game_data.player_round.length-1:
-        game_data.game_state = GameState(game_data.game_state.value+1)
-        run_next_game_state(game_state)
+        game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
+        run_next_game_state(game_data.game_state)
     else:
         if game_data.heads_up:
             current_player_node = game_data.player_round.big_blind
         else:
             current_player_node= game_data.player_round.small_blind
             while current_player_node.is_fold:
-                current_player_node = current_player.next_node
+                current_player_node = current_player_node.next_node
         game_data.current_player = current_player_node.player
         game_data.player_round.current_node = current_player_node
         get_options(room)
 
 def find_winners(all_players,room):
     global room_to_gds
-    game_data = room_to_gds.get_room(room)
+    game_data = room_to_gds.get_game_data(room)
     players = list(all_players)
     print("FIND_WINNERS")
     middle_cards = game_data.community_cards
     best_hands = [get_player_winning_hand(x.cards, middle_cards) for x in players]
     winning_players = [players[0]]
     winning_hands = [best_hands[0]]
-    emit('best hand', best_hands[0].serialize(),room=clients[players[0].name])
+    emit('best hand', best_hands[0].serialize(),room=game_data.clients[players[0].name])
     print(str(players[0]) + " has a " + str(best_hands[0]))
     for i in range(1, len(best_hands)):
         print(str(players[i]) + " has a " + str(best_hands[i]))
-        emit('best hand', best_hands[i].serialize(),room=clients[players[i].name])
+        emit('best hand', best_hands[i].serialize(),room=game_data.clients[players[i].name])
         if best_hands[i] < winning_hands[0]:
             continue
         elif best_hands[i] > winning_hands[0]:
@@ -262,7 +257,7 @@ def find_winners(all_players,room):
 
 def distribute(room):
     global room_to_gds
-    game_data = room_to_gds.get(room)
+    game_data = room_to_gds.get_game_data(room)
     if game_data.player_round.length == 1:
         assign_one_winner(room)
     else:
@@ -305,7 +300,7 @@ def distribute(room):
 
 def assign_one_winner(room):
     global room_to_gds
-    game_data = room_to_gds.get_room(room)
+    game_data = room_to_gds.get_game_data(room)
     winner = game_data.player_round.get_next_player().player
     for p in game_data.players:
         if p != winner:
@@ -315,7 +310,7 @@ def assign_one_winner(room):
 
 def apply_result_to_all(room):
     global room_to_gds
-    game_data = room_to_gds.get_room(room)
+    game_data = room_to_gds.get_game_data(room)
     players = game_data.players
     win_objects = {}
     for p in players:
@@ -328,9 +323,11 @@ def apply_result_to_all(room):
         }
     emit('result', win_objects, room=room)
 
-def current_hand_strength(player, community_cards):
+def current_hand_strength(player, community_cards,room):
+    global room_to_gds
+    game_data = room_to_gds.get_game_data(room)
     best_hand = get_player_winning_hand(player.cards,community_cards)
-    emit('current hand',best_hand.serialize(),room=clients[player.name])
+    emit('current hand',best_hand.serialize(),room=game_data.clients[player.name])
 
 def get_player_winning_hand(player_cards, middle_cards):
     all_cards = player_cards[:]
@@ -345,6 +342,10 @@ def get_options(room):
     print(game_data.current_player.name)
     print(game_data.current_player.current_contribution)
     print(game_data.highest_current_contribution)
+    print(game_data.player_round.big_blind.player == game_data.current_player)
+    print(game_data.game_state == GameDataService.GameState.PREFLOP)
+    print(game_data.player_round.big_blind.player.name)
+    print(game_data.game_state)
     if game_data.player_round.length == 1:
         distribute(room)
     else:
@@ -352,17 +353,17 @@ def get_options(room):
         ((game_data.current_player.current_contribution is not None) 
         and (game_data.current_player.current_contribution == game_data.highest_current_contribution) 
         and (game_data.big_blind_action))):
-            if game_data.game_state != GameState.WINNER:
-                game_data.game_state = GameState(game_data.game_state.value+1)
+            if game_data.game_state != GameDataService.GameState.WINNER:
+                game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
             run_next_game_state(room)
         else:
             options = []
             options.append("fold")
             if (((game_data.current_player.current_contribution is None or 
             game_data.current_player.current_contribution < game_data.highest_current_contribution) 
-            and highest_current_contribution != 0) 
-            or (game_data.player_round.big_blind.player == current_player and 
-            game_data.game_state == GameState.PREFLOP)):
+            and game_data.highest_current_contribution != 0) 
+            or (game_data.player_round.big_blind.player == game_data.current_player and 
+            game_data.game_state.value == 1)):
                 options.append("raise")
             if ((game_data.current_player.current_contribution is None 
             or game_data.current_player.current_contribution < game_data.highest_current_contribution) 
@@ -370,7 +371,7 @@ def get_options(room):
                 options.append("call")
             if (game_data.highest_current_contribution == 0 or 
             (game_data.player_round.big_blind.player == game_data.current_player and 
-            game_data.game_state == GameState.PREFLOP)):
+            game_data.game_state == GameDataService.GameState.PREFLOP)):
                 options.append("check")
                 if "raise" not in options:
                     options.append("bet")
@@ -412,7 +413,7 @@ def broadcast_pot(amount,room):
 
 def broadcast_community_cards(room):
     global room_to_gds
-    game_data = room_to_gds.get_room(room)
+    game_data = room_to_gds.get_game_data(room)
     cards = []
     for c in game_data.community_cards:
         cards.append(c.serialize())
