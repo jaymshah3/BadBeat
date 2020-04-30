@@ -253,18 +253,22 @@ class InGameDashboard extends Component {
     }
 
     fold() {
-        const { socket, username } = this.props;
+        const { socket, username, room } = this.props;
 
-        socket.emit('fold', {username: username});
+        socket.emit('fold', {username: username, room: room});
         this.setState({options: []});
     }
 
     call() {
-        const { socket, username } = this.props;
+        const { socket, username, room } = this.props;
         const { highestCurrentContribution } = this.state;
         const currentContribution = this.getMyCurrentContribution()
 
-        socket.emit('call', {username: username, amount: highestCurrentContribution-currentContribution});
+        socket.emit('call', {
+            username: username, 
+            amount: highestCurrentContribution-currentContribution,
+            room: room
+        });
         this.setState({options: []});
     }
 
@@ -278,7 +282,7 @@ class InGameDashboard extends Component {
             communityCards,
             pot 
         } = this.state;
-        const { username, socket } = this.props;
+        const { username, socket, room } = this.props;
 
         const bank = this.getMyCurrentBank()
         const currentContribution = this.getMyCurrentContribution();
@@ -333,6 +337,7 @@ class InGameDashboard extends Component {
             <RaiseDialog 
                 username={username}
                 bank={bank}
+                room={room}
                 socket={socket}
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
@@ -348,7 +353,7 @@ class InGameDashboard extends Component {
 
 InGameDashboard.propTypes = {
 	socket: any,
-    room: number,
+    room: string,
     players: any,
     username: string
 }

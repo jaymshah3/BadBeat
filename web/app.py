@@ -11,27 +11,30 @@ socketio.init_app(app, cors_allowed_origins='*')
 
 GameDataService.init_gds()
 room_to_gds = GameDataService.room_to_gds
-has_game_started = False
 lock = Lock()
     
 @socketio.on('create room')
 def create_room(data):
     global room_to_gds
-    with lock.acquire():
-        unique_id= uuid.uuid4()
-    lock.release()
-    unique_room_number = unique_id.int
+    with lock:
+        unique_id = uuid.uuid4()
+
+    unique_room_number = str(unique_id.int)
+    print(unique_room_number)
     username = data['username']
     bank = data['bank']
     small_blind = data['small_blind']
     big_blind = data['big_blind']
     game_data = GameDataService.GameData(request.sid,small_blind,big_blind)
+    print("emitting to: " + str(game_data.room_owner))
     emit('owner', {"room":unique_room_number}, room=game_data.room_owner)
+    join_room(unique_room_number)
     game_data.add_player(username,game_data.active_clients,int(bank),request.sid)
     room_to_gds.add_game_data(unique_room_number,game_data)
 
 @socketio.on('request to join')
 def request_to_join(data):
+    global room_to_gds
     username = data['username']
     room = data['room']
     data['request_sid'] = request.sid
@@ -46,16 +49,18 @@ def request_to_join(data):
 
 @socketio.on('handle join request')
 def handle_join_request(data):
+    global room_to_gds
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
     if data['approve']:
         print('success: ' + str(data['room']))
         emit("user joined", data, room=data['room'])
-        game_data.add_player(data['username'],game_data.active_clients,int(data['bank'],data['request_sid']))
+        game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
     emit('request response', data, room=game_data.clients[data['username']])
 
 @socketio.on('list users')
 def list_users(data):
+    global room_to_gds
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
     emit('user list', {'players': list(map(lambda p: {
@@ -65,6 +70,7 @@ def list_users(data):
 
 @socketio.on('leave')
 def on_leave(data):
+    global room_to_gds
     username = data['username']
     room = data['room']
     id_num = data['id_num']
@@ -75,11 +81,10 @@ def on_leave(data):
 
 @socketio.on('start')
 def on_start(data):
+    global room_to_gds
     print('got start')
-    global has_game_started
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
-    has_game_started = True
     emit('game start', {'message': "Game has started"}, room=room)
     preflop(room)
     

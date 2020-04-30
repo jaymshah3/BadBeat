@@ -38,18 +38,19 @@ aggressors = []
 room_to_gds = GameDataService.room_to_gds
 
 
-def decorator_action(function):
-    def handle_action(data):
-        global room_to_gds
-        room = data['room']
-        game_data = room_to_gds.get_game_data(room)
-        function(data,game_data)
-    return handle_action
+# def decorator_action(function):
+#     def handle_action(data):
+#         global room_to_gds
+#         room = data['room']
+#         game_data = room_to_gds.get_game_data(room)
+#         function(data,game_data)
+#     return handle_action
 
-@decorator_action
 @socketio.on('fold')
-def handle_fold(data,game_data):
+def handle_fold(data):
+    global room_to_gds
     room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     current_player = game_data.current_player
     print("FOLD")
     if data['username'] is not current_player.name:
@@ -61,11 +62,12 @@ def handle_fold(data,game_data):
     game_data.current_player = game_data.player_round.get_next_player().player
     get_options(room)
 
-@decorator_action
 @socketio.on('call')
-def handle_call(data,game_data):
+def handle_call(data):
     print("CALL")
+    global room_to_gds
     room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -89,11 +91,12 @@ def handle_call(data,game_data):
     game_data.current_player = game_data.player_round.current_node.player
     get_options(room)
         
-@decorator_action
 @socketio.on('raise')
-def handle_raise(data,game_data):
+def handle_raise(data):
     print("RAISE")
+    global room_to_gds
     room = data['room']
+    game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -375,7 +378,7 @@ def get_options(room):
                 print(opt)
             emit('options for player', {'options': options, 
             'highest_contribution': game_data.highest_current_contribution},
-             room=game_data.clients[current_player.name])
+             room=game_data.clients[game_data.current_player.name])
 
 
 def deal_cards(room):
@@ -399,7 +402,7 @@ def deal_cards(room):
                     }
                 ]
             },
-            room=game_data.clients[players[i].name]
+            room=game_data.clients[game_data.players[i].name]
         ) 
 
 

@@ -17,12 +17,13 @@ class RaiseDialog extends Component {
     }
 
     raise() {
-        const { socket, onClose, username } = this.props;
+        const { socket, onClose, username, room } = this.props;
         const { amount } = this.state;
 
         socket.emit('raise', {
             username: username,
-            amount: parseInt(amount)
+            amount: parseInt(amount),
+            room: room
         });
         onClose(true);
     }
@@ -52,7 +53,8 @@ RaiseDialog.propTypes = {
     username: string,
     onClose: func,
     socket: any,
-    currentContribution: number
+    currentContribution: number,
+    room: string
 }
 
 export default RaiseDialog;
