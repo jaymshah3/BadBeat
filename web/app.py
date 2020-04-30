@@ -17,8 +17,8 @@ lock = Lock()
 @socketio.on('create room')
 def create_room(data):
     global room_to_gds
-    lock.acquire()
-    unique_id= uuid.uuid4()
+    with lock.acquire():
+        unique_id= uuid.uuid4()
     lock.release()
     unique_room_number = unique_id.int
     username = data['username']

@@ -141,7 +141,7 @@ def run_next_game_state(room):
         # emit('withdraw', {'amount': player.current_contribution},
         # room=clients[player.name])
         game_data.players[i].current_contribution = None
-    emit('reset current contribution', {}, broadcast=True)
+    emit('reset current contribution', {}, room=room)
     game_data.highest_current_contribution = 0
     game_data.pot += game_data.current_round_pot
     broadcast_pot(pot,room)
