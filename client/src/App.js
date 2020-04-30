@@ -15,7 +15,8 @@ class App extends Component {
       isInPreGame: false,
       requested: false,
       isOwner: false,
-      room: 1,
+      room: 0,
+      inputRoom: '',
       usernameError: false
     };
   }
@@ -32,15 +33,15 @@ class App extends Component {
   defineHandlers(socket) {
     socket.on('request response', (data) => {
       if (data['approve']) {
-        this.setState({requested: false, isInPreGame: true, usernameError: false});
+        this.setState({requested: false, isInPreGame: true, usernameError: false, room: data['room']});
       } else {
         this.setState({requested: false});
       }
     });
 
-    socket.on('owner', () => {
+    socket.on('owner', (data) => {
       console.log('got owner')
-      this.setState({requested: false, isInPreGame: true, isOwner: true, usernameError: false});
+      this.setState({requested: false, isInPreGame: true, isOwner: true, usernameError: false, room: data['room']});
     });
 
     socket.on('duplicate username', () => {
@@ -57,7 +58,8 @@ class App extends Component {
       isOwner, 
       room, 
       requested,
-      bank
+      bank,
+      inputRoom
     } = this.state;
 
     const isDisabled = username == "" || username == undefined;
@@ -82,7 +84,17 @@ class App extends Component {
           // error={}
           // helperText={usernameError ? "Username already exists." : ""}
         />
-        <Button variant="contained" type="submit" disabled={isDisabled || isNaN(bank)} onClick={() => this.joinGame()}>Join Game</Button>
+        <TextField 
+          value={inputRoom} 
+          onChange={this.handleInputRoomChange} 
+          id="outlined-basic" 
+          label="Room" 
+          variant="outlined" 
+          // error={}
+          // helperText={usernameError ? "Username already exists." : ""}
+        />
+        <Button variant="contained" type="submit" disabled={isDisabled || this.isInvalidNum(bank)} onClick={() => this.createGame()}>Create Game</Button>
+        <Button variant="contained" type="submit" disabled={isDisabled || this.isInvalidNum(bank) || this.isInvalidNum(inputRoom)} onClick={() => this.joinGame()}>Join Game</Button>
       </div>
     );
 
@@ -112,6 +124,10 @@ class App extends Component {
     );
   }
 
+  isInvalidNum(data) {
+    return isNaN(data) || data == '';
+  }
+
   handleUsernameChange = (e) => {
     this.setState({
       username: e.target.value
@@ -124,15 +140,33 @@ class App extends Component {
     });
   }
 
-  joinGame() {
+  handleInputRoomChange = (e) => {
+    this.setState({
+      inputRoom: e.target.value
+    });
+  }
+
+  createGame() {
     const { socket, username, bank } = this.state;
+
+    this.setState({requested: true});
+    socket.emit('create room', {
+      username: username,
+      bank: parseInt(bank),
+      small_blind: 5,
+      big_blind: 10
+    });
+  }
+
+  joinGame() {
+    const { socket, username, bank, inputRoom } = this.state;
 
     this.setState({requested: true});
     socket.emit('request to join', {
       username: username,
-      room: 1,
+      room: inputRoom,
       bank: parseInt(bank)
-    })
+    });
   }
 }
 

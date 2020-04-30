@@ -48,8 +48,8 @@ class PreGameDashboard extends Component {
 	}
 
 	loadPlayers() {
-		const { socket } = this.props;
-		socket.emit('list users', {room: 1});
+		const { socket, room } = this.props;
+		socket.emit('list users', {room: room});
 	}
 
 	handleRequest = (element, decision) => {
@@ -57,6 +57,7 @@ class PreGameDashboard extends Component {
 		const data = {
 			username: element['username'],
 			bank: element['bank'],
+			request_sid: element['request_sid'],
 			approve: decision,
 			room: room
 		}
@@ -156,7 +157,7 @@ class PreGameDashboard extends Component {
 PreGameDashboard.propTypes = {
 	socket: any,
 	isOwner: bool,
-	room: number,
+	room: string,
 	username: string,
 	bank: number
 }
