@@ -89,5 +89,8 @@ class Round():
             pointer.next_node = added_player
             added_player.next_node = self.small_blind
             self.num_nodes += 1
-
-            
+    def toggle_node_stand_up(self,name):
+        pointer = self.small_blind
+        while pointer.player.name != name:
+            pointer = pointer.next_node
+        pointer.is_standing_up = not pointer.is_standing_up        

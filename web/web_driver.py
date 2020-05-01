@@ -130,10 +130,10 @@ def handle_raise(data):
 
 @socketio.on('stand up')
 def stand_up(data):
-    if(data['isStandingUp']):
-        pass
-    else:
-        pass
+    global room_to_gds
+    room = data['room']
+    game_data = room_to_gds.get_game_data(room)
+    game_data.player_round.toggle_node_stand_up(data['username'])
 
 
 def run_next_game_state(room):
