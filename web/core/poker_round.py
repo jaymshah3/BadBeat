@@ -29,8 +29,7 @@ class Round():
                 self.small_blind = self.current_node
 
         curr_node.next_node = first_node
-        self.big_blind = self.small_blind.next_node
-        self.current_node = self.big_blind.next_node
+        self.init_blinds()
     def remove_current(self):
         self.current_node.is_fold = True
         self.current_node.player.is_fold = True
@@ -70,7 +69,6 @@ class Round():
                 prev = prev.next_node
             self.small_blind = self.small_blind.next_node
             prev.next_node = self.small_blind
-            to_remove.next_node = None
             self.small_blind_updated = True
         elif to_remove.next_node == self.small_blind:
             prev.next_node = self.small_blind
@@ -107,3 +105,7 @@ class Round():
         if not self.small_blind_updated:
             self.small_blind = self.small_blind.next_node
         self.small_blind_updated = False
+
+    def init_blinds(self):
+        self.big_blind = self.small_blind.next_node
+        self.current_node = self.big_blind.next_node
