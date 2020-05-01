@@ -5,6 +5,7 @@ class PlayerNode():
         self.player = player
         self.is_all_in= False
         self.is_standing_up = False
+        self.is_in_next_hand = False
 
 class Round():
     
@@ -39,7 +40,7 @@ class Round():
         
     def get_next_player(self):
         next_node = self.current_node.next_node
-        while next_node.is_fold or next_node.is_all_in:
+        while next_node.is_fold or next_node.is_all_in or next_node.is_in_next_hand:
             next_node = next_node.next_node
         self.current_node = next_node
         return next_node
@@ -49,7 +50,7 @@ class Round():
         current_players.append(self.current_node.player)
         pointer = self.current_node.next_node
         while pointer != self.current_node:
-            if not pointer.is_fold and not pointer.is_standing_up:
+            if not pointer.is_fold and not pointer.is_standing_up and not pointer.is_in_next_hand:
                 current_players.append(pointer.player)
             pointer = pointer.next_node
         return current_players
@@ -75,6 +76,7 @@ class Round():
             while pointer.next_node != self.small_blind:
                 pointer = pointer.next_node
             added_player = PlayerNode(player)
+            added_player.is_in_next_hand = True
             pointer.next_node = added_player
             added_player.next_node = self.small_blind
             self.num_nodes += 1
@@ -104,12 +106,16 @@ class Round():
         self.small_blind = pointer
 
     def reset_nodes(self):
+        self.players = []
         pointer = self.small_blind.next_node
         while pointer != self.small_blind:
             pointer.is_fold = False
-            pointer.player.reset_player()
+            pointer.is_in_next_hand = False
             pointer.is_all_in = False
+            pointer.player.reset_player()
+            self.players.append(pointer.player)
             pointer = pointer.next_node
+        self.players.append(pointer.player)
         pointer.is_fold = False
 
     def start_new_hand(self):
