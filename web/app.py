@@ -86,10 +86,10 @@ def on_start(data):
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
     emit('game start', {'message': "Game has started"}, room=room)
-    preflop(room)
+    start_round(room)
     
 
-from web_driver import preflop
+from web_driver import start_round
 if __name__ == '__main__':
     socketio.run(app,debug=True)
     

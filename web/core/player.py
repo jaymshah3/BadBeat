@@ -28,3 +28,9 @@ class Player():
     
     def apply_result(self):
         self.bank += self.result
+    def reset_player(self):
+        self.result = 0
+        self.invested = 0
+        self.current_contribution = None
+        self.cards = None
+        self.is_fold = False

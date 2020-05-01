@@ -135,7 +135,6 @@ def stand_up(data):
     game_data = room_to_gds.get_game_data(room)
     game_data.player_round.toggle_node_stand_up(data['username'])
 
-
 def run_next_game_state(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
@@ -158,35 +157,41 @@ def run_next_game_state(room):
             run_street(game_data.heads_up,room)
         else:
             distribute(room)
+def start_round(room):
+    global room_to_gds
+    game_data = room_to_gds.get_game_data(room)
+    game_data.player_round = Round(game_data.get_players())
+    preflop(room)
 
 def preflop(room):
     print('PREFLOP')
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    game_data.player_round = Round(game_data.get_players(),0)
     game_data.highest_current_contribution = game_data.big_blind_amount
-    game_data.player_round.small_blind.player.bet(game_data.small_blind_amount)
+    if game_data.player_round.small_blind.player.bank <= game_data.small_blind_amount:
+        game_data.player_round.small_blind.player.bet(game_data.player_round.small_blind.player.bank)
+        game_data.player_round.small_blind.is_all_in = True
+        game_data.number_of_all_ins+=1
+    else:
+        game_data.player_round.small_blind.player.bet(game_data.small_blind_amount)
     emit('withdraw', {'username':game_data.player_round.small_blind.player.name,
      'amount': game_data.player_round.small_blind.player.current_contribution},
         room=room)
-    if game_data.player_round.small_blind.player.invested == game_data.player_round.small_blind.player.bank:
-        print('incrementing all_ins')
-        game_data.player_round.small_blind.is_all_in = True
-        game_data.number_of_all_ins+=1
     emit('player action', {
         'username': game_data.player_round.small_blind.player.name,
-        'amount': game_data.small_blind_amount,
+        'amount': game_data.player_round.small_blind.player.current_contribution,
         'action': 'small blind',
-        'currentContribution': game_data.small_blind_amount
+        'currentContribution': game_data.player_round.small_blind.player.current_contribution
     }, room=room)
-    game_data.player_round.big_blind.player.bet(game_data.big_blind_amount)
+    if game_data.player_round.big_blind.player.bank <= game_data.big_blind_amount:
+        game_data.player_round.big_blind.player.bet(game_data.player_round.big_blind.player.bank)
+        game_data.player_round.big_blind.is_all_in = True
+        game_data.number_of_all_ins+=1
+    else:
+        game_data.player_round.big_blind.player.bet(game_data.big_blind_amount)
     emit('withdraw', {'username':game_data.player_round.big_blind.player.name,
      'amount': game_data.player_round.big_blind.player.current_contribution},
         room=room)
-    if game_data.player_round.big_blind.player.invested == game_data.player_round.big_blind.player.bank:
-        print('incrementing all_ins')
-        game_data.player_round.big_blind.is_all_in = True
-        game_data.number_of_all_ins+=1
     game_data.current_round_pot += game_data.player_round.small_blind.player.current_contribution
     game_data.current_round_pot += game_data.player_round.big_blind.player.current_contribution
     game_data.current_player = game_data.player_round.current_node.player
@@ -195,9 +200,9 @@ def preflop(room):
         game_data.heads_up = True
     emit('player action', {
         'username': game_data.player_round.big_blind.player.name,
-        'amount': game_data.big_blind_amount,
+        'amount': game_data.player_round.big_blind.player.current_contribution,
         'action': 'big blind',
-        'currentContribution': game_data.big_blind_amount
+        'currentContribution': game_data.player_round.big_blind.player.current_contribution
     }, room=room)
     broadcast_pot(game_data.current_round_pot,room)
     emit('highest contribution', {'highest_contribution': game_data.big_blind_amount}, room=room)
@@ -330,15 +335,17 @@ def apply_result_to_all(room):
             'final_bank': p.bank,
         }
     emit('result', win_objects, room=room)
-    remove_busted_players(room)
+    clean_up_poker_table(room)
 
-def remove_busted_players(room):
+def clean_up_poker_table(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    for p in game_data.players:
-        if p.bank == 0:
-            game_data.players.remove(p)
-    game_data.player_round.remove_busted_players()
+    try:
+        game_data.player_round.start_new_hand()
+    except ValueError:
+        print("one player left, cannot restart")
+        return
+   
 def current_hand_strength(player, community_cards,room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)

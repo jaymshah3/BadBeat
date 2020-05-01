@@ -10,7 +10,6 @@ class Round():
     
     def __init__(self, players, small_blind=0):
         self.MAX_VALUE = 10
-        self.small_blind_updated = False
         self.players = players
         self.length_active = len(players)
         self.num_nodes = len(players)
@@ -63,19 +62,9 @@ class Round():
         while to_remove.player != player:
             prev = to_remove
             to_remove = to_remove.next_node
-        if to_remove == self.small_blind:
-            prev = to_remove
-            while prev.next_node != self.small_blind:
-                prev = prev.next_node
-            self.small_blind = self.small_blind.next_node
-            prev.next_node = self.small_blind
-            self.small_blind_updated = True
-        elif to_remove.next_node == self.small_blind:
-            prev.next_node = self.small_blind
-        else:
-            prev.next_node = to_remove.next_node
+        prev.next_node = to_remove.next_node
         to_remove.next_node = None
-        to_remove = None
+        to_remove = None 
         self.num_nodes -= 1
 
     def add_player_node(self,player):
@@ -101,11 +90,32 @@ class Round():
             if p.bank == 0:
                 self.remove_player_node(p)
                 self.players.remove(p)
-        
-        if not self.small_blind_updated:
-            self.small_blind = self.small_blind.next_node
-        self.small_blind_updated = False
 
     def init_blinds(self):
         self.big_blind = self.small_blind.next_node
         self.current_node = self.big_blind.next_node
+
+    def set_next_small_blind(self):
+        pointer = self.small_blind.next_node
+        while not pointer.player.bank == 0:
+            pointer = pointer.next_node
+        if pointer == self.small_blind:
+            raise ValueError("Only one player left")
+        self.small_blind = pointer
+
+    def reset_nodes(self):
+        pointer = self.small_blind.next_node
+        while pointer != self.small_blind:
+            pointer.is_fold = False
+            pointer.player.reset_player()
+            pointer.is_all_in = False
+            pointer = pointer.next_node
+        pointer.is_fold = False
+
+    def start_new_hand(self):
+        self.set_next_small_blind()
+        self.remove_busted_players()
+        self.init_blinds()
+        self.reset_nodes()
+        self.length = len(self.players)
+        self.num_nodes = self.length
