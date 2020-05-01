@@ -338,8 +338,7 @@ def remove_busted_players(room):
     for p in game_data.players:
         if p.bank == 0:
             game_data.players.remove(p)
-            game_data.player_round.remove_player_node(p)
-
+    game_data.player_round.remove_busted_players()
 def current_hand_strength(player, community_cards,room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)

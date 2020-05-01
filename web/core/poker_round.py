@@ -10,6 +10,7 @@ class Round():
     
     def __init__(self, players, small_blind=0):
         self.MAX_VALUE = 10
+        self.small_blind_updated = False
         self.players = players
         self.length_active = len(players)
         self.num_nodes = len(players)
@@ -70,6 +71,7 @@ class Round():
             self.small_blind = self.small_blind.next_node
             prev.next_node = self.small_blind
             to_remove.next_node = None
+            self.small_blind_updated = True
         elif to_remove.next_node == self.small_blind:
             prev.next_node = self.small_blind
         else:
@@ -89,8 +91,19 @@ class Round():
             pointer.next_node = added_player
             added_player.next_node = self.small_blind
             self.num_nodes += 1
+    
     def toggle_node_stand_up(self,name):
         pointer = self.small_blind
         while pointer.player.name != name:
             pointer = pointer.next_node
         pointer.is_standing_up = not pointer.is_standing_up        
+
+    def remove_busted_players(self):
+        for p in self.players:
+            if p.bank == 0:
+                self.remove_player_node(p)
+                self.players.remove(p)
+        
+        if not self.small_blind_updated:
+            self.small_blind = self.small_blind.next_node
+        self.small_blind_updated = False
