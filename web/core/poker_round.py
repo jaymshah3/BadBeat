@@ -4,11 +4,15 @@ class PlayerNode():
         self.is_fold= False
         self.player = player
         self.is_all_in= False
+        self.is_standing_up = False
 
 class Round():
+    
     def __init__(self, players, small_blind=0):
+        self.MAX_VALUE = 10
         self.players = players
-        self.length = len(players)
+        self.length_active = len(players)
+        self.num_nodes = len(players)
         first_node = PlayerNode(players[0])
         curr_node = first_node
         if small_blind == 0:
@@ -29,7 +33,7 @@ class Round():
     def remove_current(self):
         self.current_node.is_fold = True
         self.current_node.player.is_fold = True
-        self.length -= 1
+        self.length_active -= 1
        
     def all_in_current_node(self):
         self.current_node.is_all_in = True
@@ -46,7 +50,44 @@ class Round():
         current_players.append(self.current_node.player)
         pointer = self.current_node.next_node
         while pointer != self.current_node:
-            if not pointer.is_fold:
+            if not pointer.is_fold and not pointer.is_standing_up:
                 current_players.append(pointer.player)
             pointer = pointer.next_node
         return current_players
+
+    def remove_player_node(self,player):
+        if self.num_nodes == 1:
+            raise ValueError("Only one node")
+        prev = None
+        to_remove = self.small_blind
+        while to_remove.player != player:
+            prev = to_remove
+            to_remove = to_remove.next_node
+        if to_remove == self.small_blind:
+            prev = to_remove
+            while prev.next_node != self.small_blind:
+                prev = prev.next_node
+            self.small_blind = self.small_blind.next_node
+            prev.next_node = self.small_blind
+            to_remove.next_node = None
+        elif to_remove.next_node == self.small_blind:
+            prev.next_node = self.small_blind
+        else:
+            prev.next_node = to_remove.next_node
+        to_remove.next_node = None
+        to_remove = None
+        self.num_nodes -= 1
+
+    def add_player_node(self,player):
+        if self.num_nodes == self.MAX_VALUE:
+            raise ValueError("Max players")
+        else:
+            pointer = self.small_blind
+            while pointer.next_node != self.small_blind:
+                pointer = pointer.next_node
+            added_player = PlayerNode(player)
+            pointer.next_node = added_player
+            added_player.next_node = self.small_blind
+            self.num_nodes += 1
+
+            

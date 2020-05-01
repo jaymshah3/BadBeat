@@ -128,6 +128,14 @@ def handle_raise(data):
     game_data.current_player = game_data.player_round.get_next_player().player
     get_options(room)
 
+@socketio.on('stand up')
+def stand_up(data):
+    if(data['isStandingUp']):
+        pass
+    else:
+        pass
+
+
 def run_next_game_state(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
@@ -143,7 +151,7 @@ def run_next_game_state(room):
     game_data.pot += game_data.current_round_pot
     broadcast_pot(game_data.pot,room)
     game_data.current_round_pot = 0
-    if game_data.player_round.length == 1:
+    if game_data.player_round.length_active == 1:
         distribute(room)
     else:
         if next_game_state != GameDataService.GameState.WINNER:
@@ -212,7 +220,7 @@ def run_street(heads_up,room):
     broadcast_community_cards(room)
     for player in game_data.player_round.get_current_players():
         current_hand_strength(player,game_data.community_cards,room)
-    if game_data.number_of_all_ins >= game_data.player_round.length-1:
+    if game_data.number_of_all_ins >= game_data.player_round.length_active-1:
         game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
         run_next_game_state(game_data.game_state)
     else:
@@ -258,7 +266,7 @@ def find_winners(all_players,room):
 def distribute(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    if game_data.player_round.length == 1:
+    if game_data.player_round.length_active == 1:
         assign_one_winner(room)
     else:
         distrubute_players = game_data.players
@@ -322,6 +330,15 @@ def apply_result_to_all(room):
             'final_bank': p.bank,
         }
     emit('result', win_objects, room=room)
+    remove_busted_players(room)
+
+def remove_busted_players(room):
+    global room_to_gds
+    game_data = room_to_gds.get_game_data(room)
+    for p in game_data.players:
+        if p.bank == 0:
+            game_data.players.remove(p)
+            game_data.player_round.remove_player_node(p)
 
 def current_hand_strength(player, community_cards,room):
     global room_to_gds
@@ -343,10 +360,10 @@ def get_options(room):
     print(game_data.current_player.current_contribution)
     print(game_data.highest_current_contribution)
     print(game_data.game_state)
-    if game_data.player_round.length == 1:
+    if game_data.player_round.length_active == 1:
         distribute(room)
     else:
-        if (game_data.number_of_all_ins >= game_data.player_round.length-1 or 
+        if (game_data.number_of_all_ins >= game_data.player_round.length_active-1 or 
         ((game_data.current_player.current_contribution is not None) 
         and (game_data.current_player.current_contribution == game_data.highest_current_contribution) 
         and (game_data.big_blind_action))):
@@ -381,10 +398,10 @@ def deal_cards(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
     game_data.deck.shuffle()
-    for i in range(0, len(game_data.players)):
+    for p in game_data.player_round.get_current_players():
         pair = [game_data.deck.get_top_card(), game_data.deck.get_top_card()]
-        game_data.players[i].set_cards(pair)
-        print(str(game_data.players[i]) + ": " + str(pair[0]) + ", " + str(pair[1]))
+        p.set_cards(pair)
+        print(str(p) + ": " + str(pair[0]) + ", " + str(pair[1]))
         emit('dealt cards', 
             {
                 'cards': [
@@ -398,9 +415,8 @@ def deal_cards(room):
                     }
                 ]
             },
-            room=game_data.clients[game_data.players[i].name]
+            room=game_data.clients[p.name]
         ) 
-
 
 
 def broadcast_pot(amount,room):

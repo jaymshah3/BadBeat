@@ -60,6 +60,7 @@ class GameData():
         self.big_blind_action = False
         self.room_owner = room_owner_sid
         self.active_clients = 0
+        self.num_of_hands = 0
 
     def add_player(self,name,id_num,bank,sid):
         self.players.append(Player(name,bank,id_num))
@@ -83,7 +84,6 @@ class GameData():
         self.deck = Deck()
         self.highest_current_contribution = 0
         self.community_cards = []
-        self.player_round = None
         self.current_player = None
         self.game_state = GameState.PREFLOP
         self.prev_high_rase = 0
