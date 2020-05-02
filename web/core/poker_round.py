@@ -117,7 +117,8 @@ class Round():
             pointer = pointer.next_node
         self.players.append(pointer.player)
         pointer.is_fold = False
-
+        pointer.is_in_next_hand = False
+        pointer.is_all_in = False
     def start_new_hand(self):
         self.set_next_small_blind()
         self.remove_busted_players()

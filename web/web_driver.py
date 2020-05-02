@@ -141,10 +141,8 @@ def run_next_game_state(room):
     print('RUN_NEXT_GAME_STATE')
     print(game_data.game_state.value)
     next_game_state = game_data.game_state
-    for i in range(0,len(game_data.players)):
-        # emit('withdraw', {'amount': player.current_contribution},
-        # room=clients[player.name])
-        game_data.players[i].current_contribution = None
+    for p in game_data.player_round.players:
+        p.current_contribution = None
     emit('reset current contribution', {}, room=room)
     game_data.highest_current_contribution = 0
     game_data.pot += game_data.current_round_pot
@@ -196,7 +194,7 @@ def preflop(room):
     game_data.current_round_pot += game_data.player_round.big_blind.player.current_contribution
     game_data.current_player = game_data.player_round.current_node.player
     game_data.aggressors.append(game_data.player_round.big_blind.player)
-    if len(game_data.players) == 2:
+    if game_data.player_round.length_active == 2:
         game_data.heads_up = True
     emit('player action', {
         'username': game_data.player_round.big_blind.player.name,
@@ -342,6 +340,9 @@ def clean_up_poker_table(room):
     game_data = room_to_gds.get_game_data(room)
     try:
         game_data.player_round.start_new_hand()
+        game_data.deck = Deck()
+        game_data.reset()
+        preflop(room)
     except ValueError:
         print("one player left, cannot restart")
         return
