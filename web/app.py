@@ -39,11 +39,12 @@ def request_to_join(data):
     room = data['room']
     data['request_sid'] = request.sid
     game_data = room_to_gds.get_game_data(room)
-    if not game_data.clients.get(username,False):
+    if game_data.room_owner == request.sid:
+        join_room(room)
+    elif not game_data.clients.get(username,False):
         emit('join request', data, room=game_data.room_owner)
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
-    join_room(room)
     #send(username + ' has entered the room.', room=room)
     
 
@@ -55,6 +56,7 @@ def handle_join_request(data):
     if data['approve']:
         print('success: ' + str(data['room']))
         emit("user joined", data, room=data['room'])
+        join_room(data['room'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
     emit('request response', data, room=game_data.clients[data['username']])
 
