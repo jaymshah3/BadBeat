@@ -337,10 +337,10 @@ def apply_result_to_all(room):
 
 def clean_up_poker_table(room):
     global room_to_gds
+    print("Clean_Up_Poker_Table")
     game_data = room_to_gds.get_game_data(room)
     try:
         game_data.player_round.start_new_hand()
-        game_data.deck = Deck()
         game_data.reset()
         preflop(room)
     except ValueError:
