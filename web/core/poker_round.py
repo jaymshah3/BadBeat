@@ -96,6 +96,9 @@ class Round():
     def init_blinds(self):
         self.big_blind = self.small_blind.next_node
         self.current_node = self.big_blind.next_node
+        while self.current_node.is_standing_up:
+            self.current_node = self.current_node.next_node
+
 
     def set_next_small_blind(self):
         pointer = self.small_blind.next_node
@@ -119,10 +122,12 @@ class Round():
         pointer.is_fold = False
         pointer.is_in_next_hand = False
         pointer.is_all_in = False
+        
     def start_new_hand(self):
         self.set_next_small_blind()
         self.remove_busted_players()
         self.init_blinds()
         self.reset_nodes()
         self.length = len(self.players)
+        self.length_active = self.length
         self.num_nodes = self.length
