@@ -66,7 +66,8 @@ def list_users(data):
     emit('user list', {'players': list(map(lambda p: {
         'username': p.name, 
         'bank': p.bank
-    }, game_data.get_players()))},room=room)
+    }, game_data.get_players()))},room=request.sid)
+    
 
 @socketio.on('leave')
 def on_leave(data):

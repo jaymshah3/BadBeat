@@ -1,173 +1,101 @@
 import React, { Component } from 'react';
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link
+} from 'react-router-dom';
+import { connect } from 'react-redux';
 import './App.css';
+import Home from './Home';
+import PreGameDashboard from './PreGameDashboard';
 import { Button, TextField } from '@material-ui/core';
 import io from 'socket.io-client';
-import PreGameDashboard from './PreGameDashboard.js';
+import { setSocket } from './js/actions/index';
+import { setOwner } from './js/actions/home';
+import {
+  addJoinRequest,
+  addJoinedPlayer, 
+  setJoinedPlayers, 
+  setGameStart,
+  removeJoinRequest,
+  requestResponse 
+} from './js/actions/pregame';
+import { ENDPOINT } from './js/constants/socket-info';
 
-class App extends Component {
-  constructor() {
-    super();
+function mapDispatchToProps(dispatch) {
+  return {
+    setSocket: socket => dispatch(setSocket(socket)),
+    setOwner: owner => dispatch(setOwner(owner)),
+    addJoinedPlayer: player => dispatch(addJoinedPlayer(player)),
+    addJoinRequest: request => dispatch(addJoinRequest(request)),
+    setJoinedPlayers: players => dispatch(setJoinedPlayers(players)),
+    setGameStart: start => dispatch(setGameStart(start)),
+    removeJoinRequest: request => dispatch(removeJoinRequest(request))
+  };
+}
+
+class ConnectedApp extends Component {
+  constructor(props) {
+    super(props);
     this.state = {
-      socket: null,
-      endpoint: 'http://localhost:5000',
-      username: '',
-      bank: '',
-      isInPreGame: false,
-      requested: false,
-      isOwner: false,
-      room: 0,
-      inputRoom: '',
-      usernameError: false
-    };
+      socket: null
+    }
+
+    console.log(JSON.stringify(props));
   }
 
   componentDidMount() {
-    const { endpoint } = this.state;
-    const socket = io(endpoint);
-    console.log(socket);
-    this.setState({socket: socket})
-
+    const socket = io(ENDPOINT);
+    this.props.setSocket(socket);
+    this.setState({
+      socket: socket
+    })
     this.defineHandlers(socket);
   }
 
   defineHandlers(socket) {
-    socket.on('request response', (data) => {
-      if (data['approve']) {
-        this.setState({requested: false, isInPreGame: true, usernameError: false, room: data['room']});
-      } else {
-        this.setState({requested: false});
-      }
+    socket.on('owner',(data) => {
+      this.props.setOwner(data.room)
     });
-
-    socket.on('owner', (data) => {
-      console.log('got owner')
-      this.setState({requested: false, isInPreGame: true, isOwner: true, usernameError: false, room: data['room']});
-    });
-
-    socket.on('duplicate username', () => {
-      this.setState({requested: false, usernameError: true})
-    });
+    socket.on('join request', (data) => {
+			this.props.addJoinRequest(data);
+		});
+		socket.on('user joined', (data) => {
+      this.props.addJoinedPlayer(data);
+      this.props.removeJoinRequest(data);
+		});
+		socket.on('user list', (data) => {
+			this.props.setJoinedPlayers(data);
+		});
+		socket.on('game start', () => {
+			this.props.setGameStart(true)
+		});
   }
 
   render() {
-    const { 
-      username, 
-      usernameError, 
-      isInPreGame, 
-      socket, 
-      isOwner, 
-      room, 
-      requested,
-      bank,
-      inputRoom
-    } = this.state;
+    const { socket } = this.state;
 
-    const isDisabled = username == "" || username == undefined;
-
-    const outOfGame = (
-      <div>
-        <TextField 
-          value={this.state.username} 
-          onChange={this.handleUsernameChange} 
-          id="outlined-basic" 
-          label="Username" 
-          variant="outlined" 
-          error={usernameError}
-          helperText={usernameError ? "Username already exists." : ""}
-        />
-        <TextField 
-          value={bank} 
-          onChange={this.handleBankChange} 
-          id="outlined-basic" 
-          label="Bank" 
-          variant="outlined" 
-          // error={}
-          // helperText={usernameError ? "Username already exists." : ""}
-        />
-        <TextField 
-          value={inputRoom} 
-          onChange={this.handleInputRoomChange} 
-          id="outlined-basic" 
-          label="Room" 
-          variant="outlined" 
-          // error={}
-          // helperText={usernameError ? "Username already exists." : ""}
-        />
-        <Button variant="contained" type="submit" disabled={isDisabled || this.isInvalidNum(bank)} onClick={() => this.createGame()}>Create Game</Button>
-        <Button variant="contained" type="submit" disabled={isDisabled || this.isInvalidNum(bank) || this.isInvalidNum(inputRoom)} onClick={() => this.joinGame()}>Join Game</Button>
-      </div>
-    );
-
-    const requestedView = <h1>Requested...</h1>
-
-    const inPreGame = <PreGameDashboard 
-                        socket={socket} 
-                        isOwner={isOwner} 
-                        room={room} 
-                        username={username}
-                        bank={parseInt(bank)}
-                      />;
-
-    let show;
-    if (requested) {
-      show = requestedView;
-    } else if (isInPreGame) {
-      show = inPreGame;
-    } else {
-      show = outOfGame;
+    if (!socket) {
+      return <h3>Connecting...</h3>
     }
 
     return (
-      <div className="App">
-        {show}
-      </div>
-    );
-  }
-
-  isInvalidNum(data) {
-    return isNaN(data) || data == '';
-  }
-
-  handleUsernameChange = (e) => {
-    this.setState({
-      username: e.target.value
-    });
-  }
-
-  handleBankChange = (e) => {
-    this.setState({
-      bank: e.target.value
-    });
-  }
-
-  handleInputRoomChange = (e) => {
-    this.setState({
-      inputRoom: e.target.value
-    });
-  }
-
-  createGame() {
-    const { socket, username, bank } = this.state;
-
-    this.setState({requested: true});
-    socket.emit('create room', {
-      username: username,
-      bank: parseInt(bank),
-      small_blind: 5,
-      big_blind: 10
-    });
-  }
-
-  joinGame() {
-    const { socket, username, bank, inputRoom } = this.state;
-
-    this.setState({requested: true});
-    socket.emit('request to join', {
-      username: username,
-      room: inputRoom,
-      bank: parseInt(bank)
-    });
+      <Router>
+        <Switch>
+          <Route 
+            path="/:id" 
+            render={(props) => <PreGameDashboard {...props} />}>
+          </Route>
+          <Route path="/">
+            <Home />
+          </Route>
+        </Switch>
+      </Router>
+    )
   }
 }
+
+const App = connect(null, mapDispatchToProps)(ConnectedApp);
 
 export default App;
