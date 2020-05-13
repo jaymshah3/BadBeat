@@ -62,6 +62,7 @@ def handle_call(data):
     print("CALL")
     global room_to_gds
     room = data['room']
+    print(str(data))
     game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
@@ -69,7 +70,6 @@ def handle_call(data):
     if (game_data.game_state == GameDataService.GameState.PREFLOP 
     and game_data.current_player == game_data.player_round.big_blind.player):
         game_data.big_blind_action = True
-    print(data['amount'])
     game_data.current_player.bet(data['amount'])
     emit('withdraw', {'username':game_data.current_player.name, 'amount':data['amount']},
         room=room)
@@ -81,7 +81,6 @@ def handle_call(data):
     data['action'] = 'call'
     data['currentContribution'] = game_data.current_player.current_contribution
     emit('player action', data, room=room)
-    print(game_data.current_player.name)
     game_data.current_player = game_data.player_round.get_next_player().player
     get_options(room)
         
@@ -102,8 +101,7 @@ def handle_raise(data):
     # on raise, the amount is the final amount the player wants to be "in" for,
     # not how much more they want to add to there contribution.
     if game_data.current_player.current_contribution is not None:
-        print('raised from not none')
-        print(data['amount'])
+
         game_data.current_round_pot += data['amount']-game_data.current_player.current_contribution
         emit('withdraw', {'username':game_data.current_player.name, 
         'amount': data['amount']-game_data.current_player.current_contribution},
@@ -138,8 +136,7 @@ def stand_up(data):
 def run_next_game_state(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    print('RUN_NEXT_GAME_STATE')
-    print(game_data.game_state.value)
+    print('RUN_NEXT_GAME_STATE: ' + str(game_data.game_state.value))
     next_game_state = game_data.game_state
     for p in game_data.player_round.players:
         p.current_contribution = None
@@ -363,10 +360,6 @@ def get_options(room):
     print("GET OPTIONS")
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    print(game_data.current_player.name)
-    print(game_data.current_player.current_contribution)
-    print(game_data.highest_current_contribution)
-    print(game_data.game_state)
     if game_data.player_round.length_active == 1:
         distribute(room)
     else:
@@ -394,8 +387,6 @@ def get_options(room):
                 options.append("check")
             if "raise" not in options:
                 options.append("bet")
-            for opt in options:
-                print(opt)
             emit('options for player', {'options': options, 
             'highest_contribution': game_data.highest_current_contribution},
              room=game_data.clients[game_data.current_player.name])
@@ -408,7 +399,6 @@ def deal_cards(room):
     for p in game_data.player_round.get_current_players():
         pair = [game_data.deck.get_top_card(), game_data.deck.get_top_card()]
         p.set_cards(pair)
-        print(str(p) + ": " + str(pair[0]) + ", " + str(pair[1]))
         emit('dealt cards', 
             {
                 'cards': [
