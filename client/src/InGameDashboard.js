@@ -33,12 +33,28 @@ class ConnectedInGameDashboard extends Component {
             pot: 0,
             showRaiseDialog: false,
             winnings: 0,
-            winners: [] 
+            winners: [],
         }
     }
 
     componentDidMount() {
         this.defineHandlers();
+    }
+
+    resetState() {
+        const { currentPlayers } = this.state;
+
+        this.setState({
+            personalCards: [],
+            communityCards: [],
+            options: [],
+            highestCurrentContribution: 0,
+            currentPlayers: currentPlayers,
+            pot: 0,
+            showRaiseDialog: false,
+            winnings: 0,
+            winners: [] 
+        })
     }
 
     defineHandlers() {
@@ -132,7 +148,7 @@ class ConnectedInGameDashboard extends Component {
                     newList.push(newObj);
                 }
                 return {
-                    currentPlayers: newList
+                    currentPlayers: newList,
                 }
             });
         });
@@ -168,11 +184,23 @@ class ConnectedInGameDashboard extends Component {
                 }
                 return {
                     currentPlayers: newList,
-                    winners: winners,
-                    winnings: winnings
+                    // winners: winners,
+                    // winnings: winnings,
+                    personalCards: [],
+                    communityCards: [],
+                    options: [],
+                    highestCurrentContribution: 0,
+                    currentPlayers: currentPlayers,
+                    pot: 0,
+                    showRaiseDialog: false,
+                    currentHand: null
                 }
             });
         });
+
+        // socket.on('new game', () => {
+        //     this.resetState();
+        // });
     }
 
     getMyCurrentContribution() {

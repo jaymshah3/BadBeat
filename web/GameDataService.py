@@ -25,8 +25,6 @@ class GameDataService():
             del self.gds_map[room_id]
 
     def get_game_data(self,room_id):
-        print(self.gds_map.keys())
-        print(room_id)
         if room_id not in self.gds_map.keys():
             raise ValueError("room_id does not exist")
         else:
