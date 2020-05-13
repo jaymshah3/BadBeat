@@ -1,8 +1,15 @@
 import React, { Component } from 'react';
 import { TextField, Dialog, DialogTitle, Button } from '@material-ui/core';
 import { bool, number, string, func, any } from 'prop-types';
+import { connect } from 'react-redux';
 
-class RaiseDialog extends Component {
+const mapStateToProps = state => {
+    return {
+        socket: state.socket,
+    };
+}
+
+class ConnectedRaiseDialog extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -47,14 +54,16 @@ class RaiseDialog extends Component {
     }
 }
 
-RaiseDialog.propTypes = {
-    bank: number,
-    open: bool,
-    username: string,
-    onClose: func,
-    socket: any,
-    currentContribution: number,
-    room: string
-}
+// RaiseDialog.propTypes = {
+//     bank: number,
+//     open: bool,
+//     username: string,
+//     onClose: func,
+//     socket: any,
+//     currentContribution: number,
+//     room: string
+// }
+
+const RaiseDialog = connect(mapStateToProps)(ConnectedRaiseDialog);
 
 export default RaiseDialog;

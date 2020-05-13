@@ -1,9 +1,16 @@
 import React, { Component } from 'react';
 import { List, ListItem, Button, Divider, ListItemText } from '@material-ui/core';
 import { any, number, string } from 'prop-types';
+import { connect } from 'react-redux';
 import RaiseDialog from './RaiseDialog.js';
 
-class InGameDashboard extends Component {
+const mapStateToProps = state => {
+    return {
+        socket: state.socket,
+    };
+  }
+
+class ConnectedInGameDashboard extends Component {
     constructor(props) {
         super(props);
 
@@ -74,7 +81,6 @@ class InGameDashboard extends Component {
                     }
                     newList.push(newObj);
                 }
-                console.log(newList)
                 return {
                     currentPlayers: newList
                 }
@@ -193,6 +199,7 @@ class InGameDashboard extends Component {
 
     showWinOrLoss() {
         const { winners } = this.state;
+        console.log(winners);
         if (winners.length == 0) {
             return null;
         } else {
@@ -263,6 +270,8 @@ class InGameDashboard extends Component {
         const { socket, username, room } = this.props;
         const { highestCurrentContribution } = this.state;
         const currentContribution = this.getMyCurrentContribution()
+
+        console.log(username);
 
         socket.emit('call', {
             username: username, 
@@ -351,11 +360,7 @@ class InGameDashboard extends Component {
     }
 }
 
-InGameDashboard.propTypes = {
-	socket: any,
-    room: string,
-    players: any,
-    username: string
-}
+
+const InGameDashboard = connect(mapStateToProps)(ConnectedInGameDashboard);
 
 export default InGameDashboard;
