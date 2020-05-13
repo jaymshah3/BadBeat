@@ -7,7 +7,7 @@ import { isUnsanitized, isInvalidNum } from './js/utils/input-validators';
 const mapStateToProps = state => {
     return {
         socket: state.socket,
-        owner: state.owner
+        // owner: state.owner
     };
 }
 
@@ -22,8 +22,19 @@ class ConnectedHome extends Component {
             usernameError: true,
             bankError: true,
             smallBlindError: true,
-            bigBlindError: true
+            bigBlindError: true,
+            owner: null
         }
+    }
+
+    componentDidMount() {
+        const { socket } = this.props;
+
+        socket.on('owner',(data) => {
+            this.setState({
+                owner: data.room            
+            });
+        });
     }
 
     handleUsernameChange = (e) => {
@@ -61,15 +72,17 @@ class ConnectedHome extends Component {
     }
 
     render() {
-        const { username, bank, smallBlind, bigBlind } = this.state;
-        const { socket, owner } = this.props;
-        const connectingView = <h3>Connecting...</h3>
+        const { username, bank, smallBlind, bigBlind, owner } = this.state;
 
         if (owner) {
             return <Redirect 
                 to={{
                     pathname: "/"+owner,
-                    state: { isOwner: true }
+                    state: { 
+                        isOwner: true,
+                        username: username,
+                        bank: bank 
+                    }
                 }}
             />
         }
@@ -113,10 +126,8 @@ class ConnectedHome extends Component {
 
             </div>
         )
-        
-        const show = socket == null ? connectingView : createGameView;
-        
-        return show;
+                
+        return createGameView;
     }
 
     createGame() {

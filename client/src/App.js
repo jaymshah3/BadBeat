@@ -26,12 +26,12 @@ import { ENDPOINT } from './js/constants/socket-info';
 function mapDispatchToProps(dispatch) {
   return {
     setSocket: socket => dispatch(setSocket(socket)),
-    setOwner: owner => dispatch(setOwner(owner)),
-    addJoinedPlayer: player => dispatch(addJoinedPlayer(player)),
-    addJoinRequest: request => dispatch(addJoinRequest(request)),
-    setJoinedPlayers: players => dispatch(setJoinedPlayers(players)),
-    setGameStart: start => dispatch(setGameStart(start)),
-    removeJoinRequest: request => dispatch(removeJoinRequest(request))
+    // setOwner: owner => dispatch(setOwner(owner)),
+    // addJoinedPlayer: player => dispatch(addJoinedPlayer(player)),
+    // addJoinRequest: request => dispatch(addJoinRequest(request)),
+    // setJoinedPlayers: players => dispatch(setJoinedPlayers(players)),
+    // setGameStart: start => dispatch(setGameStart(start)),
+    // removeJoinRequest: request => dispatch(removeJoinRequest(request))
   };
 }
 
@@ -51,26 +51,7 @@ class ConnectedApp extends Component {
     this.setState({
       socket: socket
     })
-    this.defineHandlers(socket);
-  }
-
-  defineHandlers(socket) {
-    socket.on('owner',(data) => {
-      this.props.setOwner(data.room)
-    });
-    socket.on('join request', (data) => {
-			this.props.addJoinRequest(data);
-		});
-		socket.on('user joined', (data) => {
-      this.props.addJoinedPlayer(data);
-      this.props.removeJoinRequest(data);
-		});
-		socket.on('user list', (data) => {
-			this.props.setJoinedPlayers(data);
-		});
-		socket.on('game start', () => {
-			this.props.setGameStart(true)
-		});
+    // this.defineHandlers(socket);
   }
 
   render() {

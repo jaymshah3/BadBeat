@@ -15,8 +15,28 @@ class ConnectedJoinDialog extends Component {
 
         this.state = {
             username: '',
-            bank: ''
+            bank: '',
+            isRequested: false,
+            usernameError: false,
         }
+    }
+
+    componentDidMount() {
+        const { socket, onClose } = this.props;
+
+        socket.on('request response', (data) => {
+			if (data['approve']) {
+                this.setState({isRequested: false, usernameError: false});
+                console.log(data)
+                onClose(true, data['username'], data['bank']);
+			} else {
+                this.setState({isRequested: false});
+			}
+		});
+
+		socket.on('duplicate username', () => {
+			this.setState({isRequested: false, usernameError: true})
+		});
     }
 
     handleUsernameChange(e) {
@@ -37,7 +57,7 @@ class ConnectedJoinDialog extends Component {
     }
 
     join() {
-        const { socket, room, onClose } = this.props;
+        const { socket, room } = this.props;
 
         const { bank, username } = this.state;
         socket.emit('request to join', {
@@ -45,26 +65,38 @@ class ConnectedJoinDialog extends Component {
             room: room,
             bank: parseInt(bank)
         });
-        onClose(true)
-        
+        this.setState({
+            isRequested: true
+        })
     }
 
     isDisabled() {
         const { bank, username } = this.state;
-        console.log(bank)
-        console.log(username)
         return (isInvalidNum(bank) || isUnsanitized(username));
     }
 
     render() {
-        const { username, bank } = this.state;
+        const { username, bank, usernameError, isRequested } = this.state;
         const { open } = this.props;
+
+        const button = <Button onClick={() => this.join()} disabled={this.isDisabled()}>Join</Button>;
+        const requested = <p>Requested...</p>
 
         return <Dialog onClose={() => this.handleClose()} open={open}>
         <DialogTitle>Join Game</DialogTitle>
-        <TextField label="Username" value={username} onChange={(e) => this.handleUsernameChange(e)}/>
-        <TextField label="Bank" value={bank} onChange={(e) => this.handleBankChange(e)}/>
-        <Button onClick={() => this.join()} disabled={this.isDisabled()}>Done</Button>
+        <TextField 
+            label="Username" 
+            value={username} 
+            onChange={(e) => this.handleUsernameChange(e)}
+            helperText={usernameError ? "Username already exists. " : ""}
+            error={usernameError}
+        />
+        <TextField 
+            label="Bank" 
+            value={bank} 
+            onChange={(e) => this.handleBankChange(e)}
+        />
+        {isRequested ? requested : button}
     </Dialog>
     }
 }

@@ -2,16 +2,13 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Button, List, ListItem, ListItemText, Divider } from '@material-ui/core';
 import JoinDialog from './JoinDialog';
+import InGameDashboard from './InGameDashboard';
 
 const mapStateToProps = state => {
     return {
         socket: state.socket,
-        room: state.owner,
-        joinedPlayers: state.joinedPlayers,
-        joinRequests: state.joinRequests,
-        startGame: state.startGame
     };
-  }
+}
 
 class ConnectedPreGameDashboard extends Component {
     constructor(props) {
@@ -19,9 +16,14 @@ class ConnectedPreGameDashboard extends Component {
 
 		let isOwner = false;
 		let isJoined = false;
+		let username = "";
+		let bank = 0;
+
         if (this.props.location && this.props.location.state && this.props.location.state.isOwner) {
 			isOwner = true;
 			isJoined = true;
+			username = this.props.location.state.username;
+			bank = this.props.location.state.bank;
         }
 
         this.state = {
@@ -29,37 +31,57 @@ class ConnectedPreGameDashboard extends Component {
 			isJoined: isJoined,
 			isRequested: false,
 			showJoinDialog: false,
-			initialLoad: false
+			initialLoad: false,
+			joinedPlayers: [],
+			joinRequests: [],
+			startGame: false,
+			username: username,
+			bank: bank
 		};
 	}
 
 	componentDidMount() {
-		this.checkSocketAndLoadUsers()
+		this.defineHandlers()
+		this.loadUsers();
 	}
 
-	componentDidUpdate() {
-		this.checkSocketAndLoadUsers()
-		
+	defineHandlers() {
+		const { socket } = this.props;
+		socket.on('join request', (data) => {
+			this.setState((state) => {
+				const joinRequests = state.joinRequests.concat(data)
+				return {
+					joinRequests
+				}
+			});
+		});
+		socket.on('user joined', (data) => {
+			this.setState((state) => {
+				const joinedPlayers = state.joinedPlayers.concat(data);
+				const joinRequests = state.joinRequests.filter(x => x['username'] != data['username'])
+				return {
+					joinedPlayers,
+					joinRequests
+				}
+			});
+		});
+		socket.on('user list', (data) => {
+			this.setState({joinedPlayers: data["players"]});
+		});
+		socket.on('game start', () => {
+			this.setState({startGame: true});
+		});
 	}
 	
-	checkSocketAndLoadUsers() {
+	loadUsers() {
 		const { socket } = this.props;
 		const { id } = this.props.match.params;
-		const { initialLoad } = this.state;
 
-		if (!socket || initialLoad) {
-			return;
-		}
-
-		this.setState({initialLoad: true})
 		socket.emit('list users', {room: id});
-		
-
 	}
 
     showStartButton() {
-        const { isOwner } = this.state;
-        const { joinedPlayers } = this.props;
+        const { isOwner, joinedPlayers } = this.state;
 
 		if (isOwner && joinedPlayers.length >= 2) {
 			return <Button variant="contained" onClick={() => this.startGame()}>Start Game</Button>;
@@ -69,7 +91,7 @@ class ConnectedPreGameDashboard extends Component {
 	}
 
 	showJoinedPlayers() {
-		const { joinedPlayers } = this.props;
+		const { joinedPlayers } = this.state;
 
 		return <List>
 			{
@@ -86,8 +108,7 @@ class ConnectedPreGameDashboard extends Component {
 	}
 
 	showRequests() {
-        const { isOwner } = this.state;
-        const { joinRequests } = this.props;
+        const { isOwner, joinRequests } = this.state;
 
 
 		if (isOwner) {
@@ -138,21 +159,36 @@ class ConnectedPreGameDashboard extends Component {
 		this.setState({showJoinDialog: true})
 	}
 
-	handleClose(value) {
-        this.setState({showJoinDialog: false});
-        if (value) {
-            this.setState({isRequested: true});
-        }
+	handleClose = (value, newUsername, newBank) => {
+		let update = {
+			showJoinDialog: false, 
+			isJoined: value
+		}
+		if (value) {
+			update['username'] = newUsername
+			update['bank'] = newBank
+		}
+		console.log(this.state)
+		console.log(update)
+        this.setState(update);
     }
 
 	startGame() {
-		const { socket, room } = this.props;
-		socket.emit('start', {room: room});
+		const { socket } = this.props;
+		const { id } = this.props.match.params;
+
+		socket.emit('start', {room: id});
 	}
 
 	render() {
-		const { showJoinDialog } = this.state;
-		const { socket, startGame } = this.props;
+		const { 
+			showJoinDialog, 
+			startGame, 
+			joinedPlayers,
+			username,
+			bank 
+		} = this.state;
+		const { socket } = this.props;
 		const { id } = this.props.match.params;
         const connectingView = <h3>Connecting...</h3>
         if (socket == null) {
@@ -168,18 +204,17 @@ class ConnectedPreGameDashboard extends Component {
 				<JoinDialog 
 					open={showJoinDialog}
 					room={id}
-					onClose={(val) => this.handleClose(val)}
+					onClose={this.handleClose}
 				/>
 			</div>
 		)
-		// const inGame = <InGameDashboard 
-		// 					socket={socket} 
-		// 					room={room} 
-		// 					players={joinedPlayers}
-		// 					username={username}
-		// 					bank={bank}
-        // 				/>
-        const inGame = <h3>in game</h3>
+		const inGame = <InGameDashboard 
+							socket={socket} 
+							room={id} 
+							players={joinedPlayers}
+							username={username}
+							bank={bank}
+        				/>
 
 		const show = startGame ? inGame : preGame;
 
