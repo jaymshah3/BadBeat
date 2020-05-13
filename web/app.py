@@ -56,7 +56,7 @@ def handle_join_request(data):
     if data['approve']:
         print('success: ' + str(data['room']))
         emit("user joined", data, room=data['room'])
-        join_room(data['room'])
+        join_room(data['room'],sid=data['request_sid'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
     emit('request response', data, room=game_data.clients[data['username']])
 
