@@ -59,6 +59,7 @@ class GameData():
         self.room_owner = room_owner_sid
         self.active_clients = 0
         self.num_of_hands = 0
+        self.waiting_to_join = []
 
     def add_player(self,name,id_num,bank,sid):
         self.players.append(Player(name,bank,id_num))

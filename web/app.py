@@ -6,7 +6,7 @@ import uuid
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
-socketio = SocketIO()
+socketio = SocketIO(logger=False)
 socketio.init_app(app, cors_allowed_origins='*')
 
 GameDataService.init_gds()
@@ -43,8 +43,10 @@ def request_to_join(data):
         join_room(room)
     elif not game_data.clients.get(username,False):
         emit('join request', data, room=game_data.room_owner)
+        game_data.waiting_to_join.append(username)
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
+    join_room(data['room'])
     #send(username + ' has entered the room.', room=room)
     
 
@@ -55,9 +57,10 @@ def handle_join_request(data):
     game_data = room_to_gds.get_game_data(room)
     if data['approve']:
         print('success: ' + str(data['room']))
-        join_room(data['room'],sid=data['request_sid'])
+        #join_room(data['room'],sid=data['request_sid'])
         emit("user joined", data, room=data['room'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
+        game_data.waiting_to_join.remove(data['username'])
     emit('request response', data, room=game_data.clients[data['username']])
 
 @socketio.on('list users')
