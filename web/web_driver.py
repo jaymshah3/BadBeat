@@ -74,6 +74,7 @@ def handle_call(data):
     emit('withdraw', {'username':game_data.current_player.name, 'amount':data['amount']},
         room=room)
     if game_data.current_player.bank == game_data.current_player.invested:
+        print("all_in")
         game_data.number_of_all_ins+=1
         game_data.player_round.all_in_current_node()
     game_data.current_round_pot += data['amount']
@@ -87,6 +88,7 @@ def handle_call(data):
 @socketio.on('raise')
 def handle_raise(data):
     print("RAISE")
+    print(str(data))
     global room_to_gds
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
@@ -116,6 +118,7 @@ def handle_raise(data):
     game_data.highest_current_contribution = game_data.current_player.current_contribution 
     # we already added data['amount'] to current_player.current_contribution
     if game_data.current_player.bank == game_data.current_player.invested:
+        print("all_in")
         game_data.number_of_all_ins+=1
         game_data.player_round.all_in_current_node()
     broadcast_pot(game_data.current_round_pot + game_data.pot,room)
@@ -132,6 +135,14 @@ def stand_up(data):
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
     game_data.player_round.toggle_node_stand_up(data['username'])
+
+@socketio.on('waiting to join')
+def waiting_to_join(data):
+    global room_to_gds
+    room = data['room']
+    game_data = room_to_gds.get_game_data(room)
+    json_object = game_data.seralize_waiting_to_join()
+    emit('waiting list', {'waiting_list':json_object},room=game_data.room_owner)
 
 def run_next_game_state(room):
     global room_to_gds
@@ -264,6 +275,7 @@ def find_winners(all_players,room):
     # with remaning players? Lets sync and discuss.
 
 def distribute(room):
+    print("DISTRUBUTE")
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
     if game_data.player_round.length_active == 1:
@@ -310,7 +322,7 @@ def assign_one_winner(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
     winner = game_data.player_round.get_next_player().player
-    for p in game_data.players:
+    for p in game_data.player_round.players:
         if p != winner:
             p.result = -p.invested
             winner.result += p.invested
@@ -319,7 +331,7 @@ def assign_one_winner(room):
 def apply_result_to_all(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    players = game_data.players
+    players = game_data.player_round.players
     win_objects = {}
     for p in players:
         p.apply_result()
@@ -329,6 +341,7 @@ def apply_result_to_all(room):
             'hand':[p.cards[0].serialize(), p.cards[1].serialize()],
             'final_bank': p.bank,
         }
+        print("Player name: " + p.name + " Bank: " + str(p.bank))
     emit('result', win_objects, room=room)
     clean_up_poker_table(room)
 
@@ -360,6 +373,8 @@ def get_options(room):
     print("GET OPTIONS")
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
+    print(game_data.current_player.name)
+    print(game_data.current_player.current_contribution)
     if game_data.player_round.length_active == 1:
         distribute(room)
     else:
@@ -426,3 +441,4 @@ def broadcast_community_cards(room):
     for c in game_data.community_cards:
         cards.append(c.serialize())
     emit('community cards', {'community_cards': cards}, room=room)
+

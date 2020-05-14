@@ -90,6 +90,7 @@ class Round():
     def remove_busted_players(self):
         for p in self.players:
             if p.bank == 0:
+                print("removing busted player: " + p.name)
                 self.remove_player_node(p)
                 self.players.remove(p)
 
@@ -102,11 +103,12 @@ class Round():
 
     def set_next_small_blind(self):
         pointer = self.small_blind.next_node
-        while not pointer.player.bank == 0:
+        while pointer.player.bank == 0:
             pointer = pointer.next_node
         if pointer == self.small_blind:
             raise ValueError("Only one player left")
         self.small_blind = pointer
+        print("New small blind name: " + self.small_blind.player.name)
 
     def reset_nodes(self):
         self.players = []
