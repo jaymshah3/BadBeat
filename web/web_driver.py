@@ -51,6 +51,9 @@ def handle_fold(data):
     if data['username'] is not current_player.name:
         pass
         #error
+    if (game_data.game_state == GameDataService.GameState.PREFLOP 
+    and game_data.current_player == game_data.player_round.big_blind.player):
+        game_data.big_blind_action = True
     game_data.player_round.remove_current()
     data['action'] = 'fold'
     emit('player action', data, room=room)
@@ -73,17 +76,26 @@ def handle_call(data):
     game_data.current_player.bet(data['amount'])
     emit('withdraw', {'username':game_data.current_player.name, 'amount':data['amount']},
         room=room)
-    if game_data.current_player.bank == game_data.current_player.invested:
-        print("all_in")
-        game_data.number_of_all_ins+=1
-        game_data.player_round.all_in_current_node()
     game_data.current_round_pot += data['amount']
     broadcast_pot(game_data.current_round_pot + game_data.pot,room)
     data['action'] = 'call'
     data['currentContribution'] = game_data.current_player.current_contribution
     emit('player action', data, room=room)
-    game_data.current_player = game_data.player_round.get_next_player().player
-    get_options(room)
+    next_player = game_data.player_round.get_next_player().player
+    if next_player == game_data.current_player:
+        if game_data.current_player.bank == game_data.current_player.invested:
+            print("all_in")
+            game_data.number_of_all_ins+=1
+            game_data.player_round.all_in_current_node()
+        game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
+        run_next_game_state(room)
+    else:
+        if game_data.current_player.bank == game_data.current_player.invested:
+            print("all_in")
+            game_data.number_of_all_ins+=1
+        game_data.current_player = next_player
+        get_options(room)
+            
         
 @socketio.on('raise')
 def handle_raise(data):
@@ -385,8 +397,7 @@ def get_options(room):
         print("active length is 1")
         distribute(room)
     else:
-        if (game_data.number_of_all_ins >= game_data.player_round.length_active-1 or 
-        ((game_data.current_player.current_contribution is not None) 
+        if (((game_data.current_player.current_contribution is not None) 
         and (game_data.current_player.current_contribution == game_data.highest_current_contribution) 
         and (game_data.big_blind_action))):
             if game_data.game_state != GameDataService.GameState.WINNER:

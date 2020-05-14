@@ -121,6 +121,7 @@ class Round():
             self.players.append(pointer.player)
             pointer = pointer.next_node
         self.players.append(pointer.player)
+        pointer.player.reset_player()
         pointer.is_fold = False
         pointer.is_in_next_hand = False
         pointer.is_all_in = False

@@ -60,7 +60,7 @@ def handle_join_request(data):
         #join_room(data['room'],sid=data['request_sid'])
         emit("user joined", data, room=data['room'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
-        game_data.waiting_to_join.remove(data['username'])
+        game_data.remove_wait_list(data['username'])
     emit('request response', data, room=game_data.clients[data['username']])
 
 @socketio.on('list users')
