@@ -36,7 +36,8 @@ class ConnectedPreGameDashboard extends Component {
 			joinRequests: [],
 			startGame: false,
 			username: username,
-			bank: bank
+			bank: bank,
+			usernameError: false
 		};
 	}
 
@@ -70,6 +71,22 @@ class ConnectedPreGameDashboard extends Component {
 		});
 		socket.on('game start', () => {
 			this.setState({startGame: true});
+		});
+		socket.on('duplicate username', () => {
+			this.setState({isRequested: false, usernameError: true})
+		});
+		socket.on('request response', (data) => {
+			if (data['approve']) {
+                this.setState({
+					isRequested: false, 
+					usernameError: false, 
+					isJoined: true,
+					username: data['username'],
+					bank: data['bank']
+				});
+			} else {
+                this.setState({isRequested: false});
+			}
 		});
 	}
 	
@@ -159,18 +176,22 @@ class ConnectedPreGameDashboard extends Component {
 		this.setState({showJoinDialog: true})
 	}
 
-	handleClose = (value, newUsername, newBank) => {
-		let update = {
+	handleClose = (value) => {
+		this.setState({
 			showJoinDialog: false, 
-			isJoined: value
-		}
-		if (value) {
-			update['username'] = newUsername
-			update['bank'] = newBank
-		}
-		console.log(this.state)
-		console.log(update)
-        this.setState(update);
+			isRequested: value
+		});
+		// if (value) {
+		// 	update['username'] = newUsername
+		// 	update['bank'] = newBank
+		// } else if (newUsername) {
+		// 	this.setState({
+		// 		isRequested: true
+		// 	})
+		// }
+		// console.log(this.state)
+		// console.log(update)
+        // this.setState(update);
     }
 
 	startGame() {

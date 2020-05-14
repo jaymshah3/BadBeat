@@ -16,27 +16,7 @@ class ConnectedJoinDialog extends Component {
         this.state = {
             username: '',
             bank: '',
-            isRequested: false,
-            usernameError: false,
         }
-    }
-
-    componentDidMount() {
-        const { socket, onClose } = this.props;
-
-        socket.on('request response', (data) => {
-			if (data['approve']) {
-                this.setState({isRequested: false, usernameError: false});
-                console.log(data)
-                onClose(true, data['username'], data['bank']);
-			} else {
-                this.setState({isRequested: false});
-			}
-		});
-
-		socket.on('duplicate username', () => {
-			this.setState({isRequested: false, usernameError: true})
-		});
     }
 
     handleUsernameChange(e) {
@@ -53,11 +33,12 @@ class ConnectedJoinDialog extends Component {
 
     handleClose() {
         const { onClose } = this.props;
+
         onClose(false);
     }
 
     join() {
-        const { socket, room } = this.props;
+        const { socket, room, onClose } = this.props;
 
         const { bank, username } = this.state;
         socket.emit('request to join', {
@@ -65,9 +46,7 @@ class ConnectedJoinDialog extends Component {
             room: room,
             bank: parseInt(bank)
         });
-        this.setState({
-            isRequested: true
-        })
+        onClose(true, username, bank);
     }
 
     isDisabled() {
@@ -76,11 +55,8 @@ class ConnectedJoinDialog extends Component {
     }
 
     render() {
-        const { username, bank, usernameError, isRequested } = this.state;
-        const { open } = this.props;
-
-        const button = <Button onClick={() => this.join()} disabled={this.isDisabled()}>Join</Button>;
-        const requested = <p>Requested...</p>
+        const { username, bank, usernameError } = this.state;
+        const { open } = this.props
 
         return <Dialog onClose={() => this.handleClose()} open={open}>
         <DialogTitle>Join Game</DialogTitle>
@@ -96,7 +72,7 @@ class ConnectedJoinDialog extends Component {
             value={bank} 
             onChange={(e) => this.handleBankChange(e)}
         />
-        {isRequested ? requested : button}
+        <Button onClick={() => this.join()} disabled={this.isDisabled()}>Join</Button>
     </Dialog>
     }
 }

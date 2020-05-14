@@ -91,6 +91,7 @@ def handle_raise(data):
     print(str(data))
     global room_to_gds
     room = data['room']
+    
     game_data = room_to_gds.get_game_data(room)
     if data['username'] is not game_data.current_player.name:
         pass
@@ -127,6 +128,7 @@ def handle_raise(data):
     emit('highest contribution', {'highest_contribution': game_data.highest_current_contribution}, room=room)
     emit('player action', data, room=room)
     game_data.current_player = game_data.player_round.get_next_player().player
+    print("line 128: " + str(room))
     get_options(room)
 
 @socketio.on('stand up')
@@ -160,6 +162,7 @@ def run_next_game_state(room):
         distribute(room)
     else:
         if next_game_state != GameDataService.GameState.WINNER:
+            print("line 154: " + str(room))
             run_street(game_data.heads_up,room)
         else:
             distribute(room)
@@ -355,7 +358,8 @@ def clean_up_poker_table(room):
         game_data.player_round.start_new_hand()
         game_data.reset()
         preflop(room)
-    except ValueError:
+    except Exception as e:
+        print(e)
         print("one player left, cannot restart")
         return
    
@@ -387,6 +391,7 @@ def get_options(room):
         and (game_data.big_blind_action))):
             if game_data.game_state != GameDataService.GameState.WINNER:
                 game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
+            print("line 376: " + str(room))
             run_next_game_state(room)
         else:
             options = []
