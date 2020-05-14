@@ -43,7 +43,7 @@ def request_to_join(data):
         join_room(room)
     elif not game_data.clients.get(username,False):
         emit('join request', data, room=game_data.room_owner)
-        game_data.waiting_to_join.append(username)
+        game_data.waiting_to_join.append((username,data['bank'],request.sid))
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
     join_room(data['room'])

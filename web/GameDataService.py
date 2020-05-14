@@ -76,6 +76,13 @@ class GameData():
     def get_players(self):
         return self.players
 
+    def seralize_waiting_to_join(self):
+        json_waiting_to_join = []
+        for item in self.waiting_to_join:
+            username, bank, sid = item
+            json_waiting_to_join.append({'username':username,'bank':bank,'sid':sid})
+        return json_waiting_to_join
+
     def reset(self):
         self.heads_up = False
         self.pot = 0

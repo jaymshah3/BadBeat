@@ -216,8 +216,10 @@ def preflop(room):
     get_options(room) 
 
 def run_street(heads_up,room):
+    print("RUN STREET")
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
+    print("ACTIVE : " + str(game_data.player_round.length_active-1))
     print('Game State:' + str(game_data.game_state))
 
     if game_data.game_state == GameDataService.GameState.FLOP:
@@ -233,7 +235,7 @@ def run_street(heads_up,room):
         current_hand_strength(player,game_data.community_cards,room)
     if game_data.number_of_all_ins >= game_data.player_round.length_active-1:
         game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
-        run_next_game_state(game_data.game_state)
+        run_next_game_state(room)
     else:
         if game_data.heads_up:
             current_player_node = game_data.player_round.big_blind
@@ -376,6 +378,7 @@ def get_options(room):
     print(game_data.current_player.name)
     print(game_data.current_player.current_contribution)
     if game_data.player_round.length_active == 1:
+        print("active length is 1")
         distribute(room)
     else:
         if (game_data.number_of_all_ins >= game_data.player_round.length_active-1 or 
