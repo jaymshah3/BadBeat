@@ -170,6 +170,8 @@ class ConnectedInGameDashboard extends Component {
                 for (let i = 0; i < currentPlayers.length; i++) {
                     let newObj = {};
                     const resultObj = data[currentPlayers[i]['username']]
+                    console.log("resultObj")
+                    console.log(resultObj)
                     newObj['username'] = currentPlayers[i]['username'];
                     newObj['latestAction'] = currentPlayers[i]['action'];
                     newObj['currentContribution'] = currentPlayers[i]['currentContribution'];
@@ -180,22 +182,23 @@ class ConnectedInGameDashboard extends Component {
                     if (resultObj['winnings'] > 0) {
                         winners.push(resultObj);
                     }
+                    console.log("newObj")
+                    console.log(newObj)
                     newList.push(newObj);
                 }
+                console.log("newList")
+                console.log(newList)
                 return {
                     currentPlayers: newList,
-                    // winners: winners,
-                    // winnings: winnings,
                     personalCards: [],
                     communityCards: [],
                     options: [],
                     highestCurrentContribution: 0,
-                    currentPlayers: currentPlayers,
                     pot: 0,
                     showRaiseDialog: false,
                     currentHand: null
                 }
-            });
+            }, () => {console.log(this.state)});
         });
 
         // socket.on('new game', () => {
@@ -227,7 +230,6 @@ class ConnectedInGameDashboard extends Component {
 
     showWinOrLoss() {
         const { winners } = this.state;
-        console.log(winners);
         if (winners.length == 0) {
             return null;
         } else {
@@ -320,7 +322,8 @@ class ConnectedInGameDashboard extends Component {
             pot 
         } = this.state;
         const { username, socket, room } = this.props;
-
+        console.log("currentPlayers")
+        console.log(currentPlayers)
         const bank = this.getMyCurrentBank()
         const currentContribution = this.getMyCurrentContribution();
 

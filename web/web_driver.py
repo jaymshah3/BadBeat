@@ -340,7 +340,8 @@ def clean_up_poker_table(room):
         game_data.player_round.start_new_hand()
         game_data.reset()
         preflop(room)
-    except ValueError:
+    except Exception as e:
+        print(e)
         print("one player left, cannot restart")
         return
    
