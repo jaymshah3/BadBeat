@@ -39,14 +39,11 @@ def request_to_join(data):
     room = data['room']
     data['request_sid'] = request.sid
     game_data = room_to_gds.get_game_data(room)
-    if game_data.room_owner == request.sid:
-        join_room(room)
-    elif not game_data.clients.get(username,False):
+    if not game_data.clients.get(username,False):
         emit('join request', data, room=game_data.room_owner)
         game_data.waiting_to_join.append((username,data['bank'],request.sid))
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
-    join_room(data['room'])
     #send(username + ' has entered the room.', room=room)
     
 
@@ -61,12 +58,13 @@ def handle_join_request(data):
         emit("user joined", data, room=data['room'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
         game_data.remove_wait_list(data['username'])
-    emit('request response', data, room=game_data.clients[data['username']])
+    emit('request response', data, room=data['request_sid'])
 
 @socketio.on('list users')
 def list_users(data):
     global room_to_gds
     room = data['room']
+    join_room(room)
     game_data = room_to_gds.get_game_data(room)
     emit('user list', {'players': list(map(lambda p: {
         'username': p.name, 

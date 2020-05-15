@@ -46,6 +46,7 @@ def handle_fold(data):
     global room_to_gds
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
+    print("Current node: " +game_data.player_round.current_node.player.name)
     current_player = game_data.current_player
     print("FOLD")
     if data['username'] is not current_player.name:
@@ -54,11 +55,22 @@ def handle_fold(data):
     if (game_data.game_state == GameDataService.GameState.PREFLOP 
     and game_data.current_player == game_data.player_round.big_blind.player):
         game_data.big_blind_action = True
-    game_data.player_round.remove_current()
     data['action'] = 'fold'
     emit('player action', data, room=room)
-    game_data.current_player = game_data.player_round.get_next_player().player
-    get_options(room)
+    next_node= game_data.player_round.check_next_player()
+    next_player = next_node.player
+    print(next_player)
+    print("node all in: " + str(next_node.is_all_in))
+    if next_player == game_data.current_player:
+        print("line 62")
+        game_data.player_round.remove_current()
+        game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
+        run_next_game_state(room)
+    else:
+        print("line 67")
+        game_data.player_round.remove_current()
+        game_data.current_player = game_data.player_round.get_next_player().player
+        get_options(room)
 
 @socketio.on('call')
 def handle_call(data):
@@ -67,6 +79,7 @@ def handle_call(data):
     room = data['room']
     print(str(data))
     game_data = room_to_gds.get_game_data(room)
+    print("Current node: " +game_data.player_round.current_node.player.name)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -81,7 +94,7 @@ def handle_call(data):
     data['action'] = 'call'
     data['currentContribution'] = game_data.current_player.current_contribution
     emit('player action', data, room=room)
-    next_player = game_data.player_round.get_next_player().player
+    next_player = game_data.player_round.check_next_player().player
     if next_player == game_data.current_player:
         if game_data.current_player.bank == game_data.current_player.invested:
             print("all_in")
@@ -92,8 +105,10 @@ def handle_call(data):
     else:
         if game_data.current_player.bank == game_data.current_player.invested:
             print("all_in")
+            game_data.player_round.all_in_current_node()
+            print("Current node: " +game_data.player_round.current_node.player.name)
             game_data.number_of_all_ins+=1
-        game_data.current_player = next_player
+        game_data.current_player = game_data.player_round.get_next_player().player
         get_options(room)
             
         
@@ -105,6 +120,7 @@ def handle_raise(data):
     room = data['room']
     
     game_data = room_to_gds.get_game_data(room)
+    print("Current node: " +game_data.player_round.current_node.player.name)
     if data['username'] is not game_data.current_player.name:
         pass
         #error
@@ -228,6 +244,7 @@ def preflop(room):
     broadcast_pot(game_data.current_round_pot,room)
     emit('highest contribution', {'highest_contribution': game_data.big_blind_amount}, room=room)
     deal_cards(room)
+    print("Current node: " +game_data.player_round.current_node.player.name)
     get_options(room) 
 
 def run_street(heads_up,room):
@@ -256,10 +273,11 @@ def run_street(heads_up,room):
             current_player_node = game_data.player_round.big_blind
         else:
             current_player_node= game_data.player_round.small_blind
-            while current_player_node.is_fold:
+            while current_player_node.is_fold or current_player_node.is_all_in:
                 current_player_node = current_player_node.next_node
         game_data.current_player = current_player_node.player
         game_data.player_round.current_node = current_player_node
+        print("Current node: " +game_data.player_round.current_node.player.name)
         get_options(room)
 
 def find_winners(all_players,room):
