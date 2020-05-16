@@ -59,10 +59,8 @@ class ConnectedPreGameDashboard extends Component {
 		socket.on('user joined', (data) => {
 			this.setState((state) => {
 				const joinedPlayers = state.joinedPlayers.concat(data);
-				const joinRequests = state.joinRequests.filter(x => x['username'] != data['username'])
 				return {
 					joinedPlayers,
-					joinRequests
 				}
 			});
 		});
@@ -158,6 +156,12 @@ class ConnectedPreGameDashboard extends Component {
 			approve: decision,
 			room: id
 		}
+		this.setState(state => {
+			const joinRequests = state.joinRequests.filter(x => x['username'] != data['username']);
+			return {
+				joinRequests
+			}
+		})
 		socket.emit('handle join request', data);
 	}
 
@@ -230,7 +234,6 @@ class ConnectedPreGameDashboard extends Component {
 			</div>
 		)
 		const inGame = <InGameDashboard 
-							socket={socket} 
 							room={id} 
 							players={joinedPlayers}
 							username={username}
