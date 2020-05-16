@@ -60,16 +60,27 @@ def handle_join_request(data):
         game_data.remove_wait_list(data['username'])
     emit('request response', data, room=data['request_sid'])
 
-@socketio.on('list users')
+@socketio.on('game info')
 def list_users(data):
     global room_to_gds
     room = data['room']
     join_room(room)
     game_data = room_to_gds.get_game_data(room)
-    emit('user list', {'players': list(map(lambda p: {
-        'username': p.name, 
-        'bank': p.bank
-    }, game_data.get_players()))},room=request.sid)
+    cards = []
+    for c in game_data.community_cards:
+        cards.append(c.serialize())
+    emit('game info', {
+        'started': game_data.started, 
+        'community_cards': cards,
+        'pot': game_data.pot,
+        'highest_current_contribution': game_data.highest_current_contribution,
+        'players': list(map(lambda p: {
+                'username': p.name, 
+                'bank': p.bank
+            }, 
+            game_data.get_players()))
+        },
+    room=request.sid)
     
 
 @socketio.on('leave')
@@ -89,6 +100,7 @@ def on_start(data):
     print('got start')
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
+    game_data.start_game()
     emit('game start', {'message': "Game has started"}, room=room)
     start_round(room)
     

@@ -52,7 +52,7 @@ class GameData():
         self.big_blind_amount = big_blind
         self.current_player = None
         self.game_state = GameState.PREFLOP
-        self.prev_high_rase = 0
+        self.prev_high_raise = 0
         self.number_of_all_ins = 0
         self.aggressors = []
         self.big_blind_action = False
@@ -60,6 +60,7 @@ class GameData():
         self.active_clients = 0
         self.num_of_hands = 0
         self.waiting_to_join = []
+        self.started = False
 
     def add_player(self,name,id_num,bank,sid):
         self.players.append(Player(name,bank,id_num))
@@ -89,6 +90,7 @@ class GameData():
             username, bank, sid = self.waiting_to_join[i]
             if remove_username == username:
                 self.waiting_to_join.pop(i)
+                return
 
     def reset(self):
         self.heads_up = False
@@ -103,3 +105,6 @@ class GameData():
         self.number_of_all_ins = 0
         self.big_blind_action = False
         self.aggressors = []
+
+    def start_game(self):
+        self.started = True

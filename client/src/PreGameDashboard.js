@@ -37,7 +37,8 @@ class ConnectedPreGameDashboard extends Component {
 			startGame: false,
 			username: username,
 			bank: bank,
-			usernameError: false
+			usernameError: false,
+			currState: null
 		};
 	}
 
@@ -64,8 +65,20 @@ class ConnectedPreGameDashboard extends Component {
 				}
 			});
 		});
-		socket.on('user list', (data) => {
-			this.setState({joinedPlayers: data["players"]});
+		socket.on('game info', (data) => {
+			let currState = null;
+			if (data['started']) {
+				currState = {
+					communityCards: data['community_cards'],
+					pot: data['pot'],
+					highestCurrentContribution: data['highest_current_contribution']
+				}
+			}
+			this.setState({
+				joinedPlayers: data['players'],
+				startGame: data['started'],
+				currState: currState
+			});
 		});
 		socket.on('game start', () => {
 			this.setState({startGame: true});
@@ -92,7 +105,7 @@ class ConnectedPreGameDashboard extends Component {
 		const { socket } = this.props;
 		const { id } = this.props.match.params;
 
-		socket.emit('list users', {room: id});
+		socket.emit('game info', {room: id});
 	}
 
     showStartButton() {
@@ -211,7 +224,8 @@ class ConnectedPreGameDashboard extends Component {
 			startGame, 
 			joinedPlayers,
 			username,
-			bank 
+			bank,
+			currState 
 		} = this.state;
 		const { socket } = this.props;
 		const { id } = this.props.match.params;
@@ -234,6 +248,7 @@ class ConnectedPreGameDashboard extends Component {
 			</div>
 		)
 		const inGame = <InGameDashboard 
+							currState={currState}
 							room={id} 
 							players={joinedPlayers}
 							username={username}

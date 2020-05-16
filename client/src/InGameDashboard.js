@@ -23,14 +23,22 @@ class ConnectedInGameDashboard extends Component {
                 currentContribution: 0
             }
         });
+        let communityCards = [];
+        let pot = 0;
+        let highestCurrentContribution = 0;
+        if (props['currState']) {
+            communityCards = props['currState']['communityCards'];
+            pot = props['currState']['pot'];
+            highestCurrentContribution = props['currState']['highestCurrentContribution'];
+        }
         console.log("beginning: " + JSON.stringify(newList))
         this.state = {
             personalCards: [],
-            communityCards: [],
+            communityCards: communityCards,
             options: [],
-            highestCurrentContribution: 0,
+            highestCurrentContribution: highestCurrentContribution,
             currentPlayers: newList,
-            pot: 0,
+            pot: pot,
             showRaiseDialog: false,
             winnings: 0,
             winners: [],
