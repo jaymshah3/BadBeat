@@ -39,10 +39,19 @@ class Round():
         self.current_node.is_all_in = True
         
     def get_next_player(self):
+        print("getting next player")
         next_node = self.current_node.next_node
         while next_node.is_fold or next_node.is_all_in or next_node.is_in_next_hand:
             next_node = next_node.next_node
         self.current_node = next_node
+        print("current node: " + self.current_node.player.name)
+        return next_node
+
+    def check_next_player(self):
+        print("check next player")
+        next_node = self.current_node.next_node
+        while next_node.is_fold or next_node.is_all_in or next_node.is_in_next_hand:
+            next_node = next_node.next_node
         return next_node
 
     def get_current_players(self):
@@ -121,6 +130,7 @@ class Round():
             self.players.append(pointer.player)
             pointer = pointer.next_node
         self.players.append(pointer.player)
+        pointer.player.reset_player()
         pointer.is_fold = False
         pointer.is_in_next_hand = False
         pointer.is_all_in = False

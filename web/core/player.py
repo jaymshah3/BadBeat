@@ -29,6 +29,7 @@ class Player():
     def apply_result(self):
         self.bank += self.result
     def reset_player(self):
+        print("resetting player: " + self.name)
         self.result = 0
         self.invested = 0
         self.current_contribution = None
