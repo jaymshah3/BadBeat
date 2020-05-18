@@ -52,7 +52,7 @@ class GameData():
         self.big_blind_amount = big_blind
         self.current_player = None
         self.game_state = GameState.PREFLOP
-        self.prev_high_raise = 0
+        self.wager_size = big_blind
         self.number_of_all_ins = 0
         self.aggressors = []
         self.big_blind_action = False
@@ -108,7 +108,6 @@ class GameData():
         self.community_cards = []
         self.current_player = None
         self.game_state = GameState.PREFLOP
-        self.prev_high_rase = 0
         self.number_of_all_ins = 0
         self.big_blind_action = False
         self.aggressors = []
