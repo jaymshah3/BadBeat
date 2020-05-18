@@ -429,7 +429,8 @@ def get_options(room):
             game_data.current_player.current_contribution < game_data.highest_current_contribution) 
             and game_data.highest_current_contribution != 0) 
             or (game_data.player_round.big_blind.player == game_data.current_player and 
-            game_data.game_state.value == 1)):
+            game_data.game_state.value == 1) and 
+            (game_data.current_player != game_data.player_round.check_next_player.player)):
                 options.append("raise")
             if ((game_data.current_player.current_contribution is None 
             or game_data.current_player.current_contribution < game_data.highest_current_contribution) 
