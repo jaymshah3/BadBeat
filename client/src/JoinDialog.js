@@ -2,12 +2,8 @@ import React, { Component } from 'react';
 import { TextField, Dialog, DialogTitle, Button } from '@material-ui/core';
 import { connect } from 'react-redux';
 import { isInvalidNum, isUnsanitized } from './js/utils/input-validators';
+import mapStateToProps from './js/utils/mapStateToProps';
 
-const mapStateToProps = state => {
-    return {
-        socket: state.socket
-    };
-  }
 
 class ConnectedJoinDialog extends Component {
     constructor(props) {

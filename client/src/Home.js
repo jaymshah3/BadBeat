@@ -3,13 +3,8 @@ import { connect } from 'react-redux';
 import { TextField, Button } from '@material-ui/core';
 import { Redirect } from 'react-router-dom';
 import { isUnsanitized, isInvalidNum } from './js/utils/input-validators';
+import mapStateToProps from './js/utils/mapStateToProps';
 
-const mapStateToProps = state => {
-    return {
-        socket: state.socket,
-        // owner: state.owner
-    };
-}
 
 class ConnectedHome extends Component {
     constructor(props) {

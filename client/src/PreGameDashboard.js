@@ -3,12 +3,8 @@ import { connect } from 'react-redux';
 import { Button, List, ListItem, ListItemText, Divider } from '@material-ui/core';
 import JoinDialog from './JoinDialog';
 import InGameDashboard from './InGameDashboard';
-
-const mapStateToProps = state => {
-    return {
-        socket: state.socket,
-    };
-}
+import mapStateToProps from './js/utils/mapStateToProps';
+import ChatComponent from './ChatComponent';
 
 class ConnectedPreGameDashboard extends Component {
     constructor(props) {
@@ -218,6 +214,15 @@ class ConnectedPreGameDashboard extends Component {
 		socket.emit('start', {room: id});
 	}
 
+	showChatRoom() {
+		const { isJoined, username } = this.state;
+		const { id } = this.props.match.params;
+
+		if (isJoined) {
+			return <ChatComponent username={username} room={id} />
+		}
+	}
+
 	render() {
 		const { 
 			showJoinDialog, 
@@ -257,7 +262,10 @@ class ConnectedPreGameDashboard extends Component {
 
 		const show = startGame ? inGame : preGame;
 
-		return <div>{show}</div>
+		return <div>
+			{this.showChatRoom()}
+			{show}
+		</div>
 	}
 }
 

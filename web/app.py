@@ -60,6 +60,15 @@ def handle_join_request(data):
         game_data.remove_wait_list(data['username'])
     emit('request response', data, room=data['request_sid'])
 
+@socketio.on('chat message')
+def chat_message(data):
+    global room_to_gds
+    room = data['room']
+    game_data = room_to_gds.get_game_data(room)
+    players = game_data.get_players()
+    for p in players:
+        emit('chat message', data, room=game_data.clients[p.name])
+
 @socketio.on('game info')
 def list_users(data):
     global room_to_gds

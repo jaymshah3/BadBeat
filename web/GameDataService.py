@@ -84,6 +84,13 @@ class GameData():
             json_waiting_to_join.append({'username':username,'bank':bank,'sid':sid})
         return json_waiting_to_join
 
+    def serialize_players(self):
+        json_players = []
+        for item in self.players:
+            username, bank, sid = item
+            json_players.append({'username':username,'bank':bank,'sid':sid})
+        return json_players
+
         
     def remove_wait_list(self,remove_username):
         for i in range(0,len(self.waiting_to_join)):

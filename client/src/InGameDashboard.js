@@ -3,12 +3,7 @@ import { List, ListItem, Button, Divider, ListItemText } from '@material-ui/core
 import { any, number, string } from 'prop-types';
 import { connect } from 'react-redux';
 import RaiseDialog from './RaiseDialog.js';
-
-const mapStateToProps = state => {
-    return {
-        socket: state.socket,
-    };
-  }
+import mapStateToProps from './js/utils/mapStateToProps';
 
 class ConnectedInGameDashboard extends Component {
     constructor(props) {
@@ -330,8 +325,6 @@ class ConnectedInGameDashboard extends Component {
             pot 
         } = this.state;
         const { username, socket, room } = this.props;
-        console.log("currentPlayers")
-        console.log(currentPlayers)
         const bank = this.getMyCurrentBank()
         const currentContribution = this.getMyCurrentContribution();
 

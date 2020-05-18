@@ -1,25 +1,31 @@
 import React, { Component } from 'react';
-import { TextField, Dialog, DialogTitle, Button } from '@material-ui/core';
+import { Dialog, DialogTitle, Button, Slider } from '@material-ui/core';
 import { bool, number, string, func, any } from 'prop-types';
 import { connect } from 'react-redux';
-
-const mapStateToProps = state => {
-    return {
-        socket: state.socket,
-    };
-}
+import mapStateToProps from './js/utils/mapStateToProps';
 
 class ConnectedRaiseDialog extends Component {
     constructor(props) {
         super(props);
+        console.log(props);
         this.state = {
-            amount: ''
+            amount: props.currentContribution
         }
     }
 
-    handleAmountChange(e) {
+    componentDidUpdate(prevProps) {
+        if (prevProps.currentContribution == this.props.currentContribution) {
+            return;
+        }
+
         this.setState({
-            amount: e.target.value
+            amount: this.props.currentContribution
+        });
+    }
+
+    handleAmountChange(_, value) {
+        this.setState({
+            amount: value
         });
     }
 
@@ -42,13 +48,20 @@ class ConnectedRaiseDialog extends Component {
 
 
     render() {  
-        const { bank, open, currentContribution } = this.props;
+        const { bank, open, currentContribution, minRaise } = this.props;
         const { amount } = this.state;
 
         return <Dialog onClose={() => this.handleClose()} open={open}>
             <DialogTitle>How much do you want to raise to?</DialogTitle>
             <p>Your bank is {bank}. You've already contributed {currentContribution}. </p>
-            <TextField value={amount} onChange={(e) => this.handleAmountChange(e)}/>
+            <Slider
+                defaultValue={currentContribution}
+                max={bank}
+                min={currentContribution}
+                onChange={(e, v) => this.handleAmountChange(e, v)}
+                step={1}
+            />
+            <p>{amount}</p>
             <Button onClick={() => this.raise()} disabled={isNaN(amount) || amount == ''}>Done</Button>
         </Dialog>
     }
