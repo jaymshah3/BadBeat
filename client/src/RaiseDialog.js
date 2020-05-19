@@ -9,17 +9,17 @@ class ConnectedRaiseDialog extends Component {
         super(props);
         console.log(props);
         this.state = {
-            amount: props.currentContribution
+            amount: props.minBet
         }
     }
 
     componentDidUpdate(prevProps) {
-        if (prevProps.currentContribution == this.props.currentContribution) {
+        if (prevProps.minBet == this.props.minBet) {
             return;
         }
 
         this.setState({
-            amount: this.props.currentContribution
+            amount: this.props.minBet
         });
     }
 
@@ -55,7 +55,7 @@ class ConnectedRaiseDialog extends Component {
             <DialogTitle>How much do you want to raise to?</DialogTitle>
             <p>Your bank is {bank}. You've already contributed {currentContribution}. </p>
             <Slider
-                defaultValue={currentContribution}
+                defaultValue={minBet}
                 max={Math.min(maxBet, bank)}
                 min={minBet}
                 onChange={(e, v) => this.handleAmountChange(e, v)}
