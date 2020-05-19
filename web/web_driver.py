@@ -362,7 +362,7 @@ def distribute(room):
 def assign_one_winner(room):
     global room_to_gds
     game_data = room_to_gds.get_game_data(room)
-    winner = game_data.player_round.get_next_player().player
+    winner = game_data.current_player
     for p in game_data.player_round.players:
         if p != winner:
             p.result = -p.invested
