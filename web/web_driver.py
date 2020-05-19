@@ -127,7 +127,11 @@ def handle_raise(data):
     if (game_data.game_state == GameDataService.GameState.PREFLOP 
     and game_data.current_player == game_data.player_round.big_blind.player):
         game_data.big_blind_action = True
-    game_data.aggressors.append(game_data.current_player)
+    if ((data['amount'] >= game_data.wager_size+game_data.highest_current_contribution) 
+    or (game_data.highest_current_contribution == 0)):
+        print("latest aggresor: " + game_data.current_player.name)
+        game_data.aggressors.append(game_data.current_player)
+        game_data.latest_aggressor = game_data.current_player
     # on raise, the amount is the final amount the player wants to be "in" for,
     # not how much more they want to add to there contribution.
     if game_data.current_player.current_contribution is not None:
@@ -182,7 +186,8 @@ def run_next_game_state(room):
         p.current_contribution = None
     emit('reset current contribution', {}, room=room)
     game_data.highest_current_contribution = 0
-    game_data.wager_size = game_data.big_blind
+    game_data.latest_aggressor = None
+    game_data.wager_size = game_data.big_blind_amount
     game_data.pot += game_data.current_round_pot
     broadcast_pot(game_data.pot,room)
     game_data.current_round_pot = 0
@@ -243,7 +248,7 @@ def preflop(room):
     }, room=room)
     broadcast_pot(game_data.current_round_pot,room)
     emit('highest contribution', {'highest_contribution': game_data.big_blind_amount}, room=room)
-    game_data.wager_size = game_data.big_blind
+    game_data.wager_size = game_data.big_blind_amount
     deal_cards(room)
     print("Current node: " +game_data.player_round.current_node.player.name)
     get_options(room) 
@@ -412,12 +417,16 @@ def get_options(room):
     game_data = room_to_gds.get_game_data(room)
     print(game_data.current_player.name)
     print(game_data.current_player.current_contribution)
+    if game_data.latest_aggressor:
+        print(game_data.latest_aggressor.name)
+    current_player = game_data.current_player
+    highest_current_contribution = game_data.highest_current_contribution
     if game_data.player_round.length_active == 1:
         print("active length is 1")
         distribute(room)
     else:
-        if (((game_data.current_player.current_contribution is not None) 
-        and (game_data.current_player.current_contribution == game_data.highest_current_contribution) 
+        if (((game_data.current_player.current_contribution) 
+        and (current_player.current_contribution == highest_current_contribution) 
         and (game_data.big_blind_action))):
             if game_data.game_state != GameDataService.GameState.WINNER:
                 game_data.game_state = GameDataService.GameState(game_data.game_state.value+1)
@@ -426,26 +435,28 @@ def get_options(room):
         else:
             options = []
             options.append("fold")
-            if (((game_data.current_player.current_contribution is None or 
-            game_data.current_player.current_contribution < game_data.highest_current_contribution) 
-            and game_data.highest_current_contribution != 0) 
-            or (game_data.player_round.big_blind.player == game_data.current_player and 
-            game_data.game_state.value == 1) and 
-            (game_data.current_player != game_data.player_round.check_next_player.player)):
+            if ((game_data.latest_aggressor != current_player) and 
+            (current_player != game_data.player_round.check_next_player().player)
+            and (highest_current_contribution != 0) and ((not current_player.current_contribution or
+            current_player.current_contribution < highest_current_contribution)
+            or (game_data.player_round.big_blind.player == current_player and
+            game_data.game_state.value ==1))):
                 options.append("raise")
-            if ((game_data.current_player.current_contribution is None 
-            or game_data.current_player.current_contribution < game_data.highest_current_contribution) 
-            and game_data.highest_current_contribution != 0):  
+            if ((not current_player.current_contribution 
+            or current_player.current_contribution < highest_current_contribution) 
+            and highest_current_contribution != 0):  
                 options.append("call")
             if "call" not in options:
                 options.append("check")
-            if "raise" not in options:
+            if ("raise" not in options 
+            and game_data.latest_aggressor != current_player
+            and highest_current_contribution == 0):
                 options.append("bet")
             max_bet_amount = find_max_bet(room)
             emit('options for player', {'options': options, 
-            'max_bet': max_bet_amount, 'min_bet':game_data.wager_size+game_data.highest_current_contribution,
-            'highest_contribution': game_data.highest_current_contribution},
-             room=game_data.clients[game_data.current_player.name])
+            'max_bet': max_bet_amount, 'min_bet':game_data.wager_size+highest_current_contribution,
+            'highest_contribution': highest_current_contribution},
+             room=game_data.clients[current_player.name])
 
 
 def deal_cards(room):

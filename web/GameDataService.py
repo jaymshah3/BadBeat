@@ -55,6 +55,7 @@ class GameData():
         self.wager_size = big_blind
         self.number_of_all_ins = 0
         self.aggressors = []
+        self.latest_aggressor = None
         self.big_blind_action = False
         self.room_owner = room_owner_sid
         self.active_clients = 0
@@ -111,6 +112,7 @@ class GameData():
         self.number_of_all_ins = 0
         self.big_blind_action = False
         self.aggressors = []
+        self.latest_aggressor = None
 
     def start_game(self):
         self.started = True
