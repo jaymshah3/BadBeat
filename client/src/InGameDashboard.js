@@ -37,6 +37,8 @@ class ConnectedInGameDashboard extends Component {
             showRaiseDialog: false,
             winnings: 0,
             winners: [],
+            maxBet: 0,
+            minBet: 0
         }
     }
 
@@ -74,7 +76,9 @@ class ConnectedInGameDashboard extends Component {
         socket.on('options for player', (data) => {
             this.setState({
                 options: data['options'], 
-                highestCurrentContribution: data['highest_contribution']
+                highestCurrentContribution: data['highest_contribution'],
+                maxBet: data['max_bet'],
+                minBet: data['min_bet']
             });
         });
 
@@ -322,7 +326,9 @@ class ConnectedInGameDashboard extends Component {
             showRaiseDialog,
             personalCards,
             communityCards,
-            pot 
+            pot,
+            minBet,
+            maxBet 
         } = this.state;
         const { username, socket, room } = this.props;
         const bank = this.getMyCurrentBank()
@@ -383,6 +389,8 @@ class ConnectedInGameDashboard extends Component {
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
                 currentContribution={currentContribution}
+                minBet={minBet}
+                maxBet={maxBet}
             />
             {this.showCurrentHand()}
             <h3>Pot: {pot}</h3>

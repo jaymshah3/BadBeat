@@ -48,7 +48,7 @@ class ConnectedRaiseDialog extends Component {
 
 
     render() {  
-        const { bank, open, currentContribution, minRaise } = this.props;
+        const { bank, open, currentContribution, minBet, maxBet } = this.props;
         const { amount } = this.state;
 
         return <Dialog onClose={() => this.handleClose()} open={open}>
@@ -56,8 +56,8 @@ class ConnectedRaiseDialog extends Component {
             <p>Your bank is {bank}. You've already contributed {currentContribution}. </p>
             <Slider
                 defaultValue={currentContribution}
-                max={bank}
-                min={currentContribution}
+                max={Math.min(maxBet, bank)}
+                min={minBet}
                 onChange={(e, v) => this.handleAmountChange(e, v)}
                 step={1}
             />
