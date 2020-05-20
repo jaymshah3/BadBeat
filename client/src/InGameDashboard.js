@@ -47,19 +47,17 @@ class ConnectedInGameDashboard extends Component {
     }
 
     resetState() {
-        const { currentPlayers } = this.state;
-
         this.setState({
             personalCards: [],
             communityCards: [],
             options: [],
             highestCurrentContribution: 0,
-            currentPlayers: currentPlayers,
             pot: 0,
             showRaiseDialog: false,
-            winnings: 0,
-            winners: [] 
-        })
+            currentHand: null,
+            winners: [],
+            winnings: 0
+        });
     }
 
     defineHandlers() {
@@ -198,20 +196,15 @@ class ConnectedInGameDashboard extends Component {
                 console.log(newList)
                 return {
                     currentPlayers: newList,
-                    personalCards: [],
-                    communityCards: [],
-                    options: [],
-                    highestCurrentContribution: 0,
-                    pot: 0,
-                    showRaiseDialog: false,
-                    currentHand: null
+                    winners: winners,
+                    winnings: winnings
                 }
             }, () => {console.log(this.state)});
         });
 
-        // socket.on('new game', () => {
-        //     this.resetState();
-        // });
+        socket.on('new game', () => {
+            this.resetState();
+        });
     }
 
     getMyCurrentContribution() {

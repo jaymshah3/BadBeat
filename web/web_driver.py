@@ -11,6 +11,11 @@ try:
 except ImportError:
     from flask_socketio import socketio, join_room, leave_room, send, emit
 
+try:
+    from __main__ import eventlet
+except ImportError:
+    import eventlet
+
 
 room_to_gds = GameDataService.room_to_gds
 
@@ -384,6 +389,7 @@ def apply_result_to_all(room):
         }
         print("Player name: " + p.name + " Bank: " + str(p.bank))
     emit('result', win_objects, room=room)
+    eventlet.sleep(10)
     clean_up_poker_table(room)
 
 def clean_up_poker_table(room):
@@ -393,11 +399,13 @@ def clean_up_poker_table(room):
     try:
         game_data.player_round.start_new_hand()
         game_data.reset()
-        preflop(room)
     except Exception as e:
         print(e)
         print("one player left, cannot restart")
         return
+    emit('new game', room=room)
+    preflop(room)
+
    
 def current_hand_strength(player, community_cards,room):
     global room_to_gds

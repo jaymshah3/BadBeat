@@ -35,9 +35,9 @@ class ConnectedPreGameDashboard extends Component {
 			bank: bank,
 			usernameError: false,
 			currState: null,
-			pendingStandUp: false,
-			pendingSitDown: false,
-			isStoodUp: false
+			// pendingStandUp: false,
+			// pendingSitDown: false,
+			// isStoodUp: false
 		};
 	}
 
@@ -226,24 +226,24 @@ class ConnectedPreGameDashboard extends Component {
 		}
 	}
 
-	showStandUpToggleButton() {
-		const { startGame, pendingStandUp, isStoodUp } = this.state;
-		if (startGame && (pendingStandUp || isStoodUp)) {
-			return <Button 
-			variant="contained" 
-			type="submit" 
-			onClick={() => this.toggleStandUp()}>Sit Down</Button>
-		} else if (startGame) {
-			return <Button 
-				variant="contained" 
-				type="submit" 
-				onClick={() => this.toggleStandUp()}>Stand Up</Button>
-		}
-	}
+	// showStandUpToggleButton() {
+	// 	const { startGame, pendingStandUp, isStoodUp } = this.state;
+	// 	if (startGame && (pendingStandUp || isStoodUp)) {
+	// 		return <Button 
+	// 		variant="contained" 
+	// 		type="submit" 
+	// 		onClick={() => this.toggleStandUp()}>Sit Down</Button>
+	// 	} else if (startGame) {
+	// 		return <Button 
+	// 			variant="contained" 
+	// 			type="submit" 
+	// 			onClick={() => this.toggleStandUp()}>Stand Up</Button>
+	// 	}
+	// }
 
-	standUp() {
+	// standUp() {
 
-	}
+	// }
 
 	render() {
 		const { 
@@ -262,7 +262,7 @@ class ConnectedPreGameDashboard extends Component {
         }
         const preGame = (
 			<div>
-				{this.showStandUpToggleButton()}
+				{/* {this.showStandUpToggleButton()} */}
 				{this.showStartButton()}
 				{this.showJoinButton()}
 				{this.showRequests()}
