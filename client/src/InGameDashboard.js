@@ -169,6 +169,7 @@ class ConnectedInGameDashboard extends Component {
         });
 
         socket.on('result', (data) => {
+            console.log(data)
             this.setState(state => {
                 const newList = []
                 let winners = []

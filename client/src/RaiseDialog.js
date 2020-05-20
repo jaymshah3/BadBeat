@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Dialog, DialogTitle, Button, Slider } from '@material-ui/core';
+import { Dialog, DialogTitle, Button, Slider, TextField } from '@material-ui/core';
 import { bool, number, string, func, any } from 'prop-types';
 import { connect } from 'react-redux';
 import mapStateToProps from './js/utils/mapStateToProps';
@@ -29,6 +29,12 @@ class ConnectedRaiseDialog extends Component {
         });
     }
 
+    handleAmountTextChange(e) {
+        this.setState({
+            amount: e.target.value
+        });
+    }
+
     raise() {
         const { socket, onClose, username, room } = this.props;
         const { amount } = this.state;
@@ -46,6 +52,12 @@ class ConnectedRaiseDialog extends Component {
         onClose(false);
     }
 
+    isInvalidAmount() {
+        const { amount } = this.state;
+        const { minBet, maxBet } = this.props;
+        return (amount < minBet || amount > maxBet);
+    }
+
 
     render() {  
         const { bank, open, currentContribution, minBet, maxBet } = this.props;
@@ -55,13 +67,19 @@ class ConnectedRaiseDialog extends Component {
             <DialogTitle>How much do you want to raise to?</DialogTitle>
             <p>Your bank is {bank}. You've already contributed {currentContribution}. </p>
             <Slider
-                defaultValue={minBet}
+                value={amount}
                 max={Math.min(maxBet, bank)}
                 min={minBet}
                 onChange={(e, v) => this.handleAmountChange(e, v)}
                 step={1}
             />
-            <p>{amount}</p>
+            <TextField 
+                label="Amount" 
+                value={amount} 
+                onChange={(e) => this.handleAmountTextChange(e)}
+                // helperText={usernameError ? "Username already exists. " : ""}
+                error={this.isInvalidAmount()}
+            />
             <Button onClick={() => this.raise()} disabled={isNaN(amount) || amount == ''}>Done</Button>
         </Dialog>
     }
