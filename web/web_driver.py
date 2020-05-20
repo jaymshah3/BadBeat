@@ -429,11 +429,13 @@ def get_options(room):
         print(game_data.latest_aggressor.name)
     current_player = game_data.current_player
     highest_current_contribution = game_data.highest_current_contribution
+    print(highest_current_contribution)
+    print(game_data.big_blind_action)
     if game_data.player_round.length_active == 1:
         print("active length is 1")
         distribute(room)
     else:
-        if (((game_data.current_player.current_contribution) 
+        if (((game_data.current_player.current_contribution is not None) 
         and (current_player.current_contribution == highest_current_contribution) 
         and (game_data.big_blind_action))):
             if game_data.game_state != GameDataService.GameState.WINNER:
