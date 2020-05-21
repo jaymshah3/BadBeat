@@ -1,9 +1,9 @@
 from threading import Lock
-from flask import Flask, request
+from flask import Flask, request, make_response
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 import GameDataService
 import uuid
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../client/build", static_url_path="/")
 app.config['SECRET_KEY'] = 'secret!'
 
 socketio = SocketIO(logger=False)
@@ -12,7 +12,15 @@ socketio.init_app(app, cors_allowed_origins='*')
 GameDataService.init_gds()
 room_to_gds = GameDataService.room_to_gds
 lock = Lock()
-    
+
+@app.route('/*')
+def index():
+    return app.send_static_file('index.html')
+
+@app.route('/<room_id>')
+def room_page(room_id):
+    return app.send_static_file('index.html')
+
 @socketio.on('create room')
 def create_room(data):
     global room_to_gds
