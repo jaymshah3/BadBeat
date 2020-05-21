@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
 import { List, ListItem, Button, Divider, ListItemText } from '@material-ui/core';
 import { any, number, string } from 'prop-types';
+import { connect } from 'react-redux';
 import RaiseDialog from './RaiseDialog.js';
+import mapStateToProps from './js/utils/mapStateToProps';
 
-class InGameDashboard extends Component {
+class ConnectedInGameDashboard extends Component {
     constructor(props) {
         super(props);
 
@@ -16,22 +18,46 @@ class InGameDashboard extends Component {
                 currentContribution: 0
             }
         });
+        let communityCards = [];
+        let pot = 0;
+        let highestCurrentContribution = 0;
+        if (props['currState']) {
+            communityCards = props['currState']['communityCards'];
+            pot = props['currState']['pot'];
+            highestCurrentContribution = props['currState']['highestCurrentContribution'];
+        }
         console.log("beginning: " + JSON.stringify(newList))
         this.state = {
             personalCards: [],
-            communityCards: [],
+            communityCards: communityCards,
             options: [],
-            highestCurrentContribution: 0,
+            highestCurrentContribution: highestCurrentContribution,
             currentPlayers: newList,
-            pot: 0,
+            pot: pot,
             showRaiseDialog: false,
             winnings: 0,
-            winners: [] 
+            winners: [],
+            maxBet: 0,
+            minBet: 0
         }
     }
 
     componentDidMount() {
         this.defineHandlers();
+    }
+
+    resetState() {
+        this.setState({
+            personalCards: [],
+            communityCards: [],
+            options: [],
+            highestCurrentContribution: 0,
+            pot: 0,
+            showRaiseDialog: false,
+            currentHand: null,
+            winners: [],
+            winnings: 0
+        });
     }
 
     defineHandlers() {
@@ -48,7 +74,9 @@ class InGameDashboard extends Component {
         socket.on('options for player', (data) => {
             this.setState({
                 options: data['options'], 
-                highestCurrentContribution: data['highest_contribution']
+                highestCurrentContribution: data['highest_contribution'],
+                maxBet: data['max_bet'],
+                minBet: data['min_bet']
             });
         });
 
@@ -74,7 +102,6 @@ class InGameDashboard extends Component {
                     }
                     newList.push(newObj);
                 }
-                console.log(newList)
                 return {
                     currentPlayers: newList
                 }
@@ -126,7 +153,7 @@ class InGameDashboard extends Component {
                     newList.push(newObj);
                 }
                 return {
-                    currentPlayers: newList
+                    currentPlayers: newList,
                 }
             });
         });
@@ -140,6 +167,7 @@ class InGameDashboard extends Component {
         });
 
         socket.on('result', (data) => {
+            console.log(data)
             this.setState(state => {
                 const newList = []
                 let winners = []
@@ -148,6 +176,8 @@ class InGameDashboard extends Component {
                 for (let i = 0; i < currentPlayers.length; i++) {
                     let newObj = {};
                     const resultObj = data[currentPlayers[i]['username']]
+                    console.log("resultObj")
+                    console.log(resultObj)
                     newObj['username'] = currentPlayers[i]['username'];
                     newObj['latestAction'] = currentPlayers[i]['action'];
                     newObj['currentContribution'] = currentPlayers[i]['currentContribution'];
@@ -158,14 +188,22 @@ class InGameDashboard extends Component {
                     if (resultObj['winnings'] > 0) {
                         winners.push(resultObj);
                     }
+                    console.log("newObj")
+                    console.log(newObj)
                     newList.push(newObj);
                 }
+                console.log("newList")
+                console.log(newList)
                 return {
                     currentPlayers: newList,
                     winners: winners,
                     winnings: winnings
                 }
-            });
+            }, () => {console.log(this.state)});
+        });
+
+        socket.on('new game', () => {
+            this.resetState();
         });
     }
 
@@ -264,6 +302,8 @@ class InGameDashboard extends Component {
         const { highestCurrentContribution } = this.state;
         const currentContribution = this.getMyCurrentContribution()
 
+        console.log(username);
+
         socket.emit('call', {
             username: username, 
             amount: highestCurrentContribution-currentContribution,
@@ -280,10 +320,11 @@ class InGameDashboard extends Component {
             showRaiseDialog,
             personalCards,
             communityCards,
-            pot 
+            pot,
+            minBet,
+            maxBet 
         } = this.state;
         const { username, socket, room } = this.props;
-
         const bank = this.getMyCurrentBank()
         const currentContribution = this.getMyCurrentContribution();
 
@@ -342,6 +383,8 @@ class InGameDashboard extends Component {
                 open={showRaiseDialog}
                 onClose={(value) => this.handleClose(value)}
                 currentContribution={currentContribution}
+                minBet={minBet}
+                maxBet={maxBet}
             />
             {this.showCurrentHand()}
             <h3>Pot: {pot}</h3>
@@ -351,11 +394,7 @@ class InGameDashboard extends Component {
     }
 }
 
-InGameDashboard.propTypes = {
-	socket: any,
-    room: string,
-    players: any,
-    username: string
-}
+
+const InGameDashboard = connect(mapStateToProps)(ConnectedInGameDashboard);
 
 export default InGameDashboard;

@@ -25,6 +25,13 @@ class Player():
             raise ValueError("Insufficient Funds")
         self.current_contribution += amount
         self.invested += amount
-    
+        print("Player " + self.name + " has invested " + str(self.invested))
     def apply_result(self):
         self.bank += self.result
+    def reset_player(self):
+        print("resetting player: " + self.name)
+        self.result = 0
+        self.invested = 0
+        self.current_contribution = None
+        self.cards = None
+        self.is_fold = False
