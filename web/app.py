@@ -6,7 +6,7 @@ import uuid
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 
-socketio = SocketIO()
+socketio = SocketIO(logger=False)
 socketio.init_app(app, cors_allowed_origins='*')
 
 GameDataService.init_gds()
@@ -39,10 +39,9 @@ def request_to_join(data):
     room = data['room']
     data['request_sid'] = request.sid
     game_data = room_to_gds.get_game_data(room)
-    if game_data.room_owner == request.sid:
-        join_room(room)
-    elif not game_data.clients.get(username,False):
+    if not game_data.clients.get(username,False):
         emit('join request', data, room=game_data.room_owner)
+        game_data.waiting_to_join.append((username,data['bank'],request.sid))
     else:
         emit('duplicate username' ,{'message': "Username already exists"}, room=request.sid)
     #send(username + ' has entered the room.', room=room)
@@ -55,20 +54,43 @@ def handle_join_request(data):
     game_data = room_to_gds.get_game_data(room)
     if data['approve']:
         print('success: ' + str(data['room']))
+        #join_room(data['room'],sid=data['request_sid'])
         emit("user joined", data, room=data['room'])
-        join_room(data['room'])
         game_data.add_player(data['username'],game_data.active_clients,int(data['bank']),data['request_sid'])
-    emit('request response', data, room=game_data.clients[data['username']])
+        game_data.remove_wait_list(data['username'])
+    emit('request response', data, room=data['request_sid'])
 
-@socketio.on('list users')
-def list_users(data):
+@socketio.on('chat message')
+def chat_message(data):
     global room_to_gds
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
-    emit('user list', {'players': list(map(lambda p: {
-        'username': p.name, 
-        'bank': p.bank
-    }, game_data.get_players()))},room=room)
+    players = game_data.get_players()
+    for p in players:
+        emit('chat message', data, room=game_data.clients[p.name])
+
+@socketio.on('game info')
+def list_users(data):
+    global room_to_gds
+    room = data['room']
+    join_room(room)
+    game_data = room_to_gds.get_game_data(room)
+    cards = []
+    for c in game_data.community_cards:
+        cards.append(c.serialize())
+    emit('game info', {
+        'started': game_data.started, 
+        'community_cards': cards,
+        'pot': game_data.pot,
+        'highest_current_contribution': game_data.highest_current_contribution,
+        'players': list(map(lambda p: {
+                'username': p.name, 
+                'bank': p.bank
+            }, 
+            game_data.get_players()))
+        },
+    room=request.sid)
+    
 
 @socketio.on('leave')
 def on_leave(data):
@@ -87,6 +109,7 @@ def on_start(data):
     print('got start')
     room = data['room']
     game_data = room_to_gds.get_game_data(room)
+    game_data.start_game()
     emit('game start', {'message': "Game has started"}, room=room)
     start_round(room)
     
