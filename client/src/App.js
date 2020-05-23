@@ -9,29 +9,12 @@ import { connect } from 'react-redux';
 import './App.css';
 import Home from './Home';
 import PreGameDashboard from './PreGameDashboard';
-import { Button, TextField } from '@material-ui/core';
 import io from 'socket.io-client';
 import { setSocket } from './js/actions/index';
-import { setOwner } from './js/actions/home';
-import {
-  addJoinRequest,
-  addJoinedPlayer, 
-  setJoinedPlayers, 
-  setGameStart,
-  removeJoinRequest,
-  requestResponse 
-} from './js/actions/pregame';
-import { ENDPOINT } from './js/constants/socket-info';
 
 function mapDispatchToProps(dispatch) {
   return {
-    setSocket: socket => dispatch(setSocket(socket)),
-    // setOwner: owner => dispatch(setOwner(owner)),
-    // addJoinedPlayer: player => dispatch(addJoinedPlayer(player)),
-    // addJoinRequest: request => dispatch(addJoinRequest(request)),
-    // setJoinedPlayers: players => dispatch(setJoinedPlayers(players)),
-    // setGameStart: start => dispatch(setGameStart(start)),
-    // removeJoinRequest: request => dispatch(removeJoinRequest(request))
+    setSocket: socket => dispatch(setSocket(socket))
   };
 }
 
@@ -41,17 +24,14 @@ class ConnectedApp extends Component {
     this.state = {
       socket: null
     }
-
-    console.log(JSON.stringify(props));
   }
 
   componentDidMount() {
-    const socket = io(ENDPOINT);
+    const socket = io({transports: ['websocket']});
     this.props.setSocket(socket);
     this.setState({
       socket: socket
     })
-    // this.defineHandlers(socket);
   }
 
   render() {

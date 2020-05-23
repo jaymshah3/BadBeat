@@ -1,5 +1,4 @@
 __pycache__/
-temp.py
 *.pyc
 client/node_modules
-web/venv
+venv

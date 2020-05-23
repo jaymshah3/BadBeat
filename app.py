@@ -1,19 +1,20 @@
 from threading import Lock
+import os
 from flask import Flask, request, make_response
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 import GameDataService
 import uuid
-app = Flask(__name__, static_folder="../client/build", static_url_path="/")
+app = Flask(__name__, static_folder="./client/build", static_url_path="/")
 app.config['SECRET_KEY'] = 'secret!'
 
-socketio = SocketIO(logger=False)
-socketio.init_app(app, cors_allowed_origins='*')
+socketio = SocketIO()
+socketio.init_app(app, cors_allowed_origins="*")
 
 GameDataService.init_gds()
 room_to_gds = GameDataService.room_to_gds
 lock = Lock()
 
-@app.route('/*')
+@app.route('/')
 def index():
     return app.send_static_file('index.html')
 
@@ -124,5 +125,11 @@ def on_start(data):
 
 from web_driver import start_round
 if __name__ == '__main__':
-    socketio.run(app,debug=True)
+    if (os.environ.get('PORT')):
+        port = int(os.environ.get('PORT'))
+        host = "0.0.0.0"
+    else:
+        host = "127.0.0.1"
+        port = 5000
+    socketio.run(app, host=host, port=port, debug=True)
     
