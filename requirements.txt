@@ -10,7 +10,7 @@ six==1.14.0
 Werkzeug==1.0.1
 click==7.1.1
 dnspython==1.16.0
-eventlet==0.25.2
+eventlet==0.31.0
 Flask==1.1.2
 Flask-SocketIO==4.2.1
 greenlet==0.4.15
